@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bella's Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FAF8F5;--surface:#FFFFFF;--surface2:#F3F0EB;--border:#E8E3DC;--text:#1A1714;--text-muted:#7A7168;--text-hint:#B0A89E;--accent:#C4763A;--accent-light:#F5EBE0;--accent-dark:#8B4E1F;--danger:#C13B3B;--danger-light:#FCEAEA;--success:#2E7D52;--success-light:#E8F5EE;--warning:#B07A1A;--warning-light:#FDF3DC;--purple:#6B4FA0;--purple-light:#F0EBF8;--radius:12px;--radius-sm:8px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.header{background:var(--text);color:white;padding:22px 20px 18px;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(196,118,58,0.15);}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:500;margin-bottom:3px;}
+.header h1{font-family:'DM Serif Display',serif;font-size:23px;font-weight:400;color:white;margin-bottom:2px;}
+.header-sub{font-size:12px;color:rgba(255,255,255,.45);display:flex;align-items:center;gap:8px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-hint);display:inline-block;transition:background .3s;}
+.sync-dot.ok{background:#4ade80;}.sync-dot.saving{background:var(--warning);}.sync-dot.err{background:var(--danger);}
+.tabs{display:flex;background:var(--surface2);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;}
+.tab{padding:10px 15px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.tab:hover{color:var(--text);}.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface);}
+.content{padding:14px;max-width:680px;margin:0 auto;}
+.panel{display:none;}.panel.active{display:block;}
+.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px;}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:13px;color:var(--text-muted);}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;text-align:center;}
+.sc-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-hint);font-weight:500;margin-bottom:3px;}
+.sc-val{font-size:12px;font-weight:600;font-family:'DM Serif Display',serif;}
+.green{color:var(--success);}.red{color:var(--danger);}.amber{color:var(--warning);}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.icard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;}
+.icard-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-hint);font-weight:500;margin-bottom:3px;}
+.icard-val{font-size:19px;font-weight:600;font-family:'DM Serif Display',serif;}
+.icard-sub{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;color:var(--text-muted);}
+.card-total{font-size:13px;font-weight:600;}
+.bill{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:5px;}
+.bill-row{display:flex;align-items:center;padding:10px 11px;gap:9px;}
+.bdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.bdot.unpaid{background:var(--danger);}.bdot.paid{background:var(--success);}
+.binfo{flex:1;min-width:0;}
+.bname{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bdue{font-size:11px;color:var(--text-hint);margin-top:1px;}
+.bamt{font-size:13px;font-weight:600;white-space:nowrap;}
+.bchk{width:19px;height:19px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:none;font-size:10px;transition:all .15s;}
+.bchk.checked{background:var(--success);border-color:var(--success);color:white;}
+.bill.paid-state{opacity:.5;}.bill.paid-state .bname{text-decoration:line-through;color:var(--text-muted);}
+.pgoal{background:linear-gradient(135deg,#1A1714,#2C2620);border-radius:var(--radius);padding:15px;margin-bottom:12px;color:white;}
+.pbar-wrap{background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin-bottom:5px;}
+.pbar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s;}
+.guard{background:var(--accent-light);border:1px solid #E8C9A5;border-radius:var(--radius);padding:13px;margin-bottom:12px;}
+.guard-title{font-size:13px;font-weight:600;color:var(--accent-dark);margin-bottom:7px;}
+.grow{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:13px;}
+.gval{font-weight:600;color:var(--accent-dark);}.glab{color:var(--text-muted);}
+.grab-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:12px;}
+.grab-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.grab-lab{font-size:12px;color:var(--text-muted);}
+.grab-val{font-size:17px;font-weight:600;font-family:'DM Serif Display',serif;}
+.inp-row{display:flex;gap:7px;margin-top:7px;flex-wrap:wrap;}
+.inp{flex:1;min-width:80px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;}
+.inp:focus{outline:none;border-color:var(--accent);}
+.sel{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;}
+.sel:focus{outline:none;border-color:var(--accent);}
+.btn{padding:7px 13px;background:var(--text);color:white;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s;white-space:nowrap;}
+.btn:hover{background:#333;}.btn-a{background:var(--accent);}.btn-a:hover{background:var(--accent-dark);}
+.pbar2-wrap{background:var(--surface2);border-radius:4px;height:5px;overflow:hidden;margin-bottom:3px;}
+.pbar2{height:100%;border-radius:4px;transition:width .4s;}
+.pbar2.s{background:var(--success);}.pbar2.w{background:var(--warning);}.pbar2.d{background:var(--danger);}
+.warn{background:var(--danger-light);border:1px solid #F5C1C1;border-radius:var(--radius-sm);padding:7px 11px;font-size:12px;color:var(--danger);font-weight:500;margin-top:5px;display:none;}
+.warn.show{display:block;}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.bd{background:var(--danger-light);color:var(--danger);}.bs{background:var(--success-light);color:var(--success);}.bw{background:var(--warning-light);color:var(--warning);}.bp{background:var(--purple-light);color:var(--purple);}.ba{background:var(--accent-light);color:var(--accent-dark);}
+.debt-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.debt-row:last-child{border-bottom:none;}
+.dplat{color:var(--text-muted);}
+.damt{font-weight:600;color:var(--danger);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;}
+.rule-card{background:var(--surface);border-left:3px solid var(--accent);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:9px 12px;margin-bottom:7px;font-size:13px;color:var(--text-muted);border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.rule-card strong{color:var(--text);font-weight:600;}
+.sle{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px;}
+.sle:last-child{border-bottom:none;}
+.sle-left{flex:1;min-width:0;}
+.sle-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sle-meta{font-size:11px;color:var(--text-hint);margin-top:1px;}
+.sle-right{text-align:right;flex-shrink:0;}
+.sle-amt{font-weight:600;}
+.sle-type{font-size:11px;margin-top:1px;}
+.sle-type.need{color:var(--success);}.sle-type.want{color:var(--danger);}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px;}
+.cat-lab{font-size:11px;color:var(--text-hint);margin-bottom:3px;}
+.cat-val{font-size:15px;font-weight:600;font-family:'DM Serif Display',serif;}
+.insight{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:13px;margin-bottom:9px;display:flex;gap:11px;align-items:flex-start;}
+.iico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.iico.g{background:var(--success-light);}.iico.r{background:var(--danger-light);}.iico.a{background:var(--warning-light);}.iico.p{background:var(--purple-light);}
+.ititle{font-size:13px;font-weight:600;margin-bottom:2px;}
+.ibody{font-size:12px;color:var(--text-muted);line-height:1.5;}
+.mpills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px;}
+.mpill{padding:4px 11px;border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text-muted);transition:all .15s;}
+.mpill.active{background:var(--accent);border-color:var(--accent);color:white;}
+.empty{text-align:center;padding:22px;color:var(--text-hint);font-size:13px;}
+.tip{font-size:11px;color:var(--text-hint);margin-top:4px;}
+/* Bank cards */
+.bank-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.bank-card{border-radius:var(--radius);padding:16px 18px;color:white;position:relative;overflow:hidden;}
+.bank-card::before{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.08);}
+.bank-bca{background:linear-gradient(135deg,#C0392B,#96281B);}
+.bank-bri{background:linear-gradient(135deg,#1a4a7a,#0d2d4f);}
+.bank-mandiri{background:linear-gradient(135deg,#D4A017,#A37912);}
+.bank-name{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:4px;font-weight:500;}
+.bank-purpose{font-size:12px;opacity:.55;margin-bottom:10px;}
+.bank-amount{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;color:white;margin-bottom:2px;}
+.bank-sub{font-size:11px;opacity:.5;}
+.bank-items{margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px;}
+.bank-item{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;opacity:.8;}
+.bank-item-name{opacity:.75;}
+.bank-item-amt{font-weight:600;}
+.alloc-note{font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;border:1px solid var(--border);}
+.mandiri-spend{margin-top:10px;border-top:1px solid rgba(255,255,255,.15);padding-top:10px;}
+.mandiri-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;}
+.mandiri-inp-row{display:flex;gap:6px;margin-top:8px;}
+.mandiri-inp{flex:1;padding:6px 9px;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius-sm);font-size:13px;background:rgba(255,255,255,.15);color:white;font-family:'DM Sans',sans-serif;}
+.mandiri-inp::placeholder{color:rgba(255,255,255,.5);}
+.mandiri-inp:focus{outline:none;border-color:rgba(255,255,255,.6);}
+.mandiri-btn{padding:6px 12px;background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.3);border-radius:var(--radius-sm);font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.mandiri-btn:hover{background:rgba(255,255,255,.3);}
+.month-sel-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.month-btn{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text-muted);font-family:'DM Sans',sans-serif;transition:all .15s;}
+.month-btn.active{background:var(--text);color:white;border-color:var(--text);}
+.alloc-header{font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:4px;}
+.alloc-subheader{font-size:12px;color:var(--text-muted);margin-bottom:16px;}
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading your dashboard...</div>
+</div>
+
+<div class="header">
+  <div class="eyebrow">Personal Finance</div>
+  <h1>Bella's Dashboard</h1>
+  <div class="header-sub">
+    <span>Salary: Rp 13.325.000 · Paid on the 1st</span>
+    <span class="sync-dot" id="sync-dot" title="Sync status"></span>
+    <span id="sync-label" style="font-size:11px;">Syncing...</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showPanel('allocate',this)">Allocate</button>
+  <button class="tab" onclick="showPanel('debt',this)">Debt &amp; Credit</button>
+  <button class="tab" onclick="showPanel('january',this)">Jan</button>
+  <button class="tab" onclick="showPanel('february',this)">Feb</button>
+  <button class="tab" onclick="showPanel('march',this)">Mar</button>
+  <button class="tab" onclick="showPanel('april',this)">Apr</button>
+  <button class="tab" onclick="showPanel('may',this)">May</button>
+  <button class="tab" onclick="showPanel('june',this)">Jun</button>
+  <button class="tab" onclick="showPanel('july',this)">Jul</button>
+  <button class="tab" onclick="showPanel('august',this)">Aug 🎂</button>
+  <button class="tab" onclick="showPanel('september',this)">Sep</button>
+  <button class="tab" onclick="showPanel('october',this)">Oct</button>
+  <button class="tab" onclick="showPanel('november',this)">Nov</button>
+  <button class="tab" onclick="showPanel('december',this)">Dec</button>
+  <button class="tab" onclick="showPanel('annual',this)">Recap 2026</button>
+</div>
+
+<div class="content">
+
+<!-- ALLOCATE -->
+<div id="panel-allocate" class="panel active">
+  <div class="alloc-header">Payday Allocation</div>
+  <div class="alloc-subheader">Salary just landed — allocate every rupiah before spending anything.</div>
+
+  <div class="month-sel-row">
+    <button class="month-btn" onclick="setAllocMonth('january',this)">Jan</button>
+    <button class="month-btn" onclick="setAllocMonth('february',this)">Feb</button>
+    <button class="month-btn" onclick="setAllocMonth('march',this)">Mar</button>
+    <button class="month-btn active" onclick="setAllocMonth('april',this)">Apr</button>
+    <button class="month-btn" onclick="setAllocMonth('may',this)">May</button>
+    <button class="month-btn" onclick="setAllocMonth('june',this)">Jun</button>
+    <button class="month-btn" onclick="setAllocMonth('july',this)">Jul</button>
+    <button class="month-btn" onclick="setAllocMonth('august',this)">Aug</button>
+    <button class="month-btn" onclick="setAllocMonth('september',this)">Sep</button>
+    <button class="month-btn" onclick="setAllocMonth('october',this)">Oct</button>
+    <button class="month-btn" onclick="setAllocMonth('november',this)">Nov</button>
+    <button class="month-btn" onclick="setAllocMonth('december',this)">Dec</button>
+  </div>
+
+  <div class="alloc-note" id="alloc-note">Salary: Rp 13.325.000 · Extra income: Rp 0 · Total: Rp 13.325.000</div>
+
+  <div class="bank-grid">
+
+    <!-- BCA -->
+    <div class="bank-card bank-bca">
+      <div class="bank-name">BCA</div>
+      <div class="bank-purpose">Bills — transfer here first, don't touch for anything else</div>
+      <div class="bank-amount" id="bca-amount">—</div>
+      <div class="bank-sub">For bills due this month</div>
+      <div class="bank-items" id="bca-items"></div>
+    </div>
+
+    <!-- BRI -->
+    <div class="bank-card bank-bri">
+      <div class="bank-name">BRI</div>
+      <div class="bank-purpose">Savings — transfer and lock it away</div>
+      <div class="bank-amount" id="bri-amount">—</div>
+      <div class="bank-sub" id="bri-sub">Savings target this month</div>
+      <div class="bank-items">
+        <div class="bank-item"><span class="bank-item-name" id="bri-item-label">Savings contribution</span><span class="bank-item-amt" id="bri-phuket">—</span></div>
+      </div>
+    </div>
+
+    <!-- Mandiri -->
+    <div class="bank-card bank-mandiri">
+      <div class="bank-name">Mandiri</div>
+      <div class="bank-purpose">Spending + buffer — what's left is yours</div>
+      <div class="bank-amount" id="mandiri-amount">—</div>
+      <div class="bank-sub" id="mandiri-sub">Daily life + Grab + emergencies</div>
+      <div class="mandiri-spend">
+        <div class="mandiri-row"><span style="opacity:.7;">Allocated</span><span style="font-weight:600;" id="mandiri-alloc">—</span></div>
+        <div class="mandiri-row"><span style="opacity:.7;">Spent (from Expenditure)</span><span style="font-weight:600;" id="mandiri-spent-disp">Rp 0</span></div>
+        <div class="mandiri-row"><span style="opacity:.7;">Remaining</span><span style="font-weight:700;font-size:15px;" id="mandiri-rem-disp">—</span></div>
+        <div style="font-size:11px;opacity:.5;margin-top:6px;">Auto-synced from Expenditure tab — Mandiri purchases only.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- JANUARY -->
+<div id="panel-january" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="jan-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="jan-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="jan-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="jan-extra-val">Rp 0</div>
+      <div class="icard-sub" id="jan-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="jan-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('january')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('january')">Undo</button></div>
+      <div id="jan-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div class="card-title">GoPay / OVO Top-Up</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div><div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">Top up at start of month — log in Expenditure as Food &amp; Drinks or Transportation.</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="jan-bills-tot"></div></div>
+    <div id="jan-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — January</div><div id="jan-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="jan-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="jan-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="jan-sh-cat"><option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="jan-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option></select><select class="sel" id="jan-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('january')">Log Purchase</button>
+    </div>
+    <div id="jan-sh-summary" onclick="toggleExpList('january')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="jan-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="jan-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="jan-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">January — The honest truth</div>
+    <div id="jan-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- FEBRUARY -->
+<div id="panel-february" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="feb-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="feb-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="feb-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="feb-extra-val">Rp 0</div>
+      <div class="icard-sub" id="feb-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="feb-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('february')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('february')">Undo</button></div>
+      <div id="feb-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div class="card-title">GoPay / OVO Top-Up</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div><div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">Top up at start of month — log in Expenditure as Food &amp; Drinks or Transportation.</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="feb-bills-tot"></div></div>
+    <div id="feb-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — February</div><div id="feb-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="feb-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="feb-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="feb-sh-cat"><option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="feb-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option></select><select class="sel" id="feb-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('february')">Log Purchase</button>
+    </div>
+    <div id="feb-sh-summary" onclick="toggleExpList('february')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="feb-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="feb-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="feb-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">February — The honest truth</div>
+    <div id="feb-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- MARCH -->
+<div id="panel-march" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="mar-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="mar-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="mar-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Bonus / Extra</div>
+      <div class="icard-val green" id="mar-extra-val" onclick="toggleExtraHistory('march')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;">Rp 0</div>
+      <div class="icard-sub" id="mar-extra-sub" onclick="toggleExtraHistory('march')" style="cursor:pointer;"></div>
+      <div id="mar-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+      <div class="inp-row"><input class="inp" id="mar-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('march')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('march')">Undo</button></div>
+    </div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div>
+        <div class="card-title">GoPay / OVO Top-Up</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport for the month</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div>
+        <div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+      Top up this amount at the start of the month — log it in Expenditure as Food &amp; Drinks or Transportation. No need to track individual rides.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="mar-bills-tot"></div></div>
+    <div id="mar-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — March</div><div id="mar-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="mar-sh-name" placeholder="Item (e.g. serum, GrabFood, coffee)"/>
+      <div style="display:flex;gap:7px;">
+        <input class="inp" id="mar-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/>
+        <select class="sel" id="mar-sh-cat">
+          <option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:7px;">
+        <select class="sel" id="mar-sh-fund" style="flex:1;">
+          <option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option>
+        </select>
+        <select class="sel" id="mar-sh-type"><option value="want">Want</option><option value="need">Need</option></select>
+      </div>
+      <button class="btn btn-a" onclick="addShopInline('march')">Log Purchase</button>
+    </div>
+    <div id="mar-sh-summary" onclick="toggleExpList('march')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;">
+      <span id="mar-sh-summary-text"></span>
+      <span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span>
+    </div>
+    <div id="mar-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="mar-month-summary" style="background:var(--text);border:none;margin-top:4px;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">March — The honest truth</div>
+    <div id="mar-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+
+</div>
+
+<!-- APRIL -->
+<div id="panel-april" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="apr-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="apr-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="apr-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="apr-extra-val" onclick="toggleExtraHistory('april')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;">Rp 0</div>
+      <div class="icard-sub" id="apr-extra-sub" onclick="toggleExtraHistory('april')" style="cursor:pointer;"></div>
+      <div id="apr-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+      <div class="inp-row"><input class="inp" id="apr-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('april')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('april')">Undo</button></div>
+    </div>
+  </div>
+  <div class="pgoal">
+    <div style="display:flex;justify-content:space-between;margin-bottom:9px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Savings goal</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">✈ Phuket Fund</div></div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);text-align:right;">June 11–16<br>Target: Rp10–12M</div>
+    </div>
+    <div style="font-size:21px;font-weight:700;color:var(--accent);" id="phuket-saved">Rp 0</div>
+    <div class="pbar-wrap"><div class="pbar-fill" id="phuket-bar" style="width:0%"></div></div>
+    <div style="font-size:11px;color:rgba(255,255,255,.35);">Goal: Rp 10M by June 11 · On track if plan holds</div>
+  </div>
+  <div class="guard">
+    <div class="guard-title">Shopping Guard — April</div>
+    <div class="grow"><span class="glab">Budget this month</span><span class="gval" style="color:var(--danger);">Rp 0 — closed</span></div>
+    <div class="rule-card" style="margin-bottom:0;"><strong>Rule:</strong> No Shopee PayLater. No new debt. Survive clean.</div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div>
+        <div class="card-title">GoPay / OVO Top-Up</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport for the month</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div>
+        <div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 750.000</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+      Top up this amount at the start of the month — log it in Expenditure as Food &amp; Drinks or Transportation. No need to track individual rides.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="apr-bills-tot"></div></div>
+    <div id="apr-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — April</div><div id="apr-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="apr-sh-name" placeholder="Item (e.g. serum, GrabFood, coffee)"/>
+      <div style="display:flex;gap:7px;">
+        <input class="inp" id="apr-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/>
+        <select class="sel" id="apr-sh-cat">
+          <option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:7px;">
+        <select class="sel" id="apr-sh-fund" style="flex:1;">
+          <option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option>
+        </select>
+        <select class="sel" id="apr-sh-type"><option value="want">Want</option><option value="need">Need</option></select>
+      </div>
+      <button class="btn btn-a" onclick="addShopInline('april')">Log Purchase</button>
+    </div>
+    <div id="apr-sh-summary" onclick="toggleExpList('april')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;">
+      <span id="apr-sh-summary-text"></span>
+      <span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span>
+    </div>
+    <div id="apr-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="apr-month-summary" style="background:var(--text);border:none;margin-top:4px;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">April — The honest truth</div>
+    <div id="apr-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+
+</div>
+<div id="panel-may" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="may-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="may-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="may-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="may-extra-val" onclick="toggleExtraHistory('may')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;">Rp 0</div>
+      <div class="icard-sub" id="may-extra-sub" onclick="toggleExtraHistory('may')" style="cursor:pointer;"></div>
+      <div id="may-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+      <div class="inp-row"><input class="inp" id="may-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('may')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('may')">Undo</button></div>
+    </div>
+  </div>
+  <div class="guard">
+    <div class="guard-title">Phuket Outfit Budget 👙</div>
+    <div class="grow"><span class="glab">Allocated</span><span class="gval">Rp 1.000.000</span></div>
+    <div class="grow"><span class="glab">Spent</span><span class="gval" id="may-outfit-sp">Rp 0</span></div>
+    <div class="grow"><span class="glab">Remaining</span><span class="gval" id="may-outfit-rem" style="color:var(--success);">Rp 1.000.000</span></div>
+    <div class="inp-row"><input class="inp" id="may-outfit-inp" type="number" placeholder="Log outfit purchase (Rp)"/><button class="btn btn-a" onclick="addOutfit()">Log</button><button class="btn" style="background:var(--warning);" onclick="undoOutfit()">Undo</button><button class="btn" style="background:var(--danger);" onclick="resetOutfit()">Reset</button></div>
+    <div class="warn" id="may-outfit-warn">⚠ Outfit budget exceeded! Step away from the cart.</div>
+    <div class="tip">Cash or debit only — no Shopee PayLater.</div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div>
+        <div class="card-title">GoPay / OVO Top-Up</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport for the month</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div>
+        <div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 850.000</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+      Top up this amount at the start of the month — log it in Expenditure as Food &amp; Drinks or Transportation. No need to track individual rides.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="may-bills-tot"></div></div>
+    <div id="may-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — May</div><div id="may-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="may-sh-name" placeholder="Item (e.g. serum, GrabFood, coffee)"/>
+      <div style="display:flex;gap:7px;">
+        <input class="inp" id="may-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/>
+        <select class="sel" id="may-sh-cat">
+          <option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:7px;">
+        <select class="sel" id="may-sh-fund" style="flex:1;">
+          <option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option>
+        </select>
+        <select class="sel" id="may-sh-type"><option value="want">Want</option><option value="need">Need</option></select>
+      </div>
+      <button class="btn btn-a" onclick="addShopInline('may')">Log Purchase</button>
+    </div>
+    <div id="may-sh-summary" onclick="toggleExpList('may')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;">
+      <span id="may-sh-summary-text"></span>
+      <span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span>
+    </div>
+    <div id="may-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="may-month-summary" style="background:var(--text);border:none;margin-top:4px;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">May — The honest truth</div>
+    <div id="may-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+
+  <div class="pgoal">
+    <div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">May savings target</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.55);">After bills + top-up + outfit:</div>
+    <div style="font-size:21px;font-weight:700;color:var(--accent);margin:3px 0;font-family:'DM Serif Display',serif;">~Rp 3.700.000</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);">Save this untouched. Don't touch it.</div>
+  </div>
+</div>
+
+<!-- JUNE -->
+<div id="panel-june" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="jun-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="jun-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="jun-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="jun-extra-val" onclick="toggleExtraHistory('june')" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;">Rp 0</div>
+      <div class="icard-sub" id="jun-extra-sub" onclick="toggleExtraHistory('june')" style="cursor:pointer;"></div>
+      <div id="jun-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+      <div class="inp-row"><input class="inp" id="jun-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('june')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('june')">Undo</button></div>
+    </div>
+  </div>
+  <div class="pgoal">
+    <div style="display:flex;justify-content:space-between;margin-bottom:9px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Phuket departs</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">June 11 — You made it.</div></div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);text-align:right;">11–16 June 2026</div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:3px;">Projected cash in hand:</div>
+    <div style="font-size:24px;font-weight:700;color:var(--accent);font-family:'DM Serif Display',serif;">~Rp 10.200.000</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px;">May Rp3.7M + June Rp6.5M = Rp10.2M ✓</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due before Phuket</div><div class="card-total" id="jun-bills-tot"></div></div>
+    <div id="jun-bills"></div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div>
+        <div class="card-title">GoPay / OVO Top-Up</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport for the month</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div>
+        <div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">
+      Top up this amount at the start of the month — log it in Expenditure as Food &amp; Drinks or Transportation. No need to track individual rides.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — June</div><div id="jun-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="jun-sh-name" placeholder="Item (e.g. serum, GrabFood, coffee)"/>
+      <div style="display:flex;gap:7px;">
+        <input class="inp" id="jun-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/>
+        <select class="sel" id="jun-sh-cat">
+          <option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:7px;">
+        <select class="sel" id="jun-sh-fund" style="flex:1;">
+          <option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option>
+        </select>
+        <select class="sel" id="jun-sh-type"><option value="want">Want</option><option value="need">Need</option></select>
+      </div>
+      <button class="btn btn-a" onclick="addShopInline('june')">Log Purchase</button>
+    </div>
+    <div id="jun-sh-summary" onclick="toggleExpList('june')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;">
+      <span id="jun-sh-summary-text"></span>
+      <span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span>
+    </div>
+    <div id="jun-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="jun-month-summary" style="background:var(--text);border:none;margin-top:4px;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">June — The honest truth</div>
+    <div id="jun-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+
+  <div class="rule-card"><strong>June rule:</strong> Pay Shopee (Rp 2.77M) on June 11 before boarding.</div>
+  <div class="rule-card"><strong>June rule:</strong> No new PayLater. Ticket + hotel already paid.</div>
+</div>
+
+<!-- JULY -->
+<div id="panel-july" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="jul-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="jul-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="jul-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="jul-extra-val">Rp 0</div>
+      <div class="icard-sub" id="jul-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="jul-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('july')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('july')">Undo</button></div>
+      <div id="jul-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Savings trackers -->
+  <div class="card" style="background:linear-gradient(135deg,#1a4a7a,#0d2d4f);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Savings goal</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">🎂 Shala's Birthday Fund</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">Target</div><div style="font-size:15px;font-weight:600;color:#FAC775;">Rp 3.000.000</div></div>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#FAC775;" id="jul-bday-saved">Rp 0</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;"><div id="jul-bday-bar" style="height:100%;background:#FAC775;border-radius:4px;width:0%;transition:width .4s;"></div></div>
+    <div class="inp-row" style="margin-top:8px;"><input class="inp" id="jul-bday-inp" type="number" placeholder="Add to birthday fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#FAC775;color:#1a1714;" onclick="addSavings('bday','july')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('bday','july')">Undo</button></div>
+  </div>
+
+  <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Emergency fund · BRI</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">🛡 Start small, grow steady</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">July target</div><div style="font-size:15px;font-weight:600;color:#9FE1CB;">Rp 500.000</div></div>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#9FE1CB;" id="jul-emg-saved">Rp 0</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;"><div id="jul-emg-bar" style="height:100%;background:#9FE1CB;border-radius:4px;width:0%;transition:width .4s;"></div></div>
+    <div class="inp-row" style="margin-top:8px;"><input class="inp" id="jul-emg-inp" type="number" placeholder="Add to emergency fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#9FE1CB;color:#0d2a1a;" onclick="addSavings('emg','july')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('emg','july')">Undo</button></div>
+  </div>
+
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div class="card-title">GoPay / OVO Top-Up</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div><div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">Top up at start of month — log in Expenditure as Food &amp; Drinks or Transportation.</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="jul-bills-tot"></div></div>
+    <div id="jul-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — July</div><div id="jul-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="jul-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="jul-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="jul-sh-cat"><option value="beauty">Beauty &amp; Self Care</option><option value="health">Health Products</option><option value="clothes">Clothes &amp; Fashion</option><option value="luxury">Luxury</option><option value="food">Food &amp; Drinks</option><option value="travel">Travel</option><option value="family">Family</option><option value="sports">Sports</option><option value="topup">Top Up</option><option value="living">Living Cost</option><option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="jul-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option><option value="cc">Credit Card</option><option value="shopee">Shopee PayLater</option><option value="gopay">GoPay PayLater</option></select><select class="sel" id="jul-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('july')">Log Purchase</button>
+    </div>
+    <div id="jul-sh-summary" onclick="toggleExpList('july')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="jul-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="jul-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="jul-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">July — The honest truth</div>
+    <div id="jul-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- AUGUST -->
+<div id="panel-august" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="aug-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="aug-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="aug-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="aug-extra-val">Rp 0</div>
+      <div class="icard-sub" id="aug-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="aug-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('august')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('august')">Undo</button></div>
+      <div id="aug-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Birthday banner -->
+  <div style="background:linear-gradient(135deg,#1a1714,#3a2010);border-radius:var(--radius);padding:16px;margin-bottom:12px;text-align:center;">
+    <div style="font-size:24px;margin-bottom:4px;">🎂🎉</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#FAC775;margin-bottom:4px;">Birthday Month!</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.5);">Yours &amp; Shalahuddin's. You've got this — it's planned, not impulsive.</div>
+  </div>
+
+  <!-- Birthday fund display -->
+  <div class="card" style="background:linear-gradient(135deg,#1a4a7a,#0d2d4f);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Shala's Birthday 🎂</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">Cash: Rp 3M + CC: Rp 10M</div></div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:10px;">Cash saved from July + August. CC gift on 3x installments (~Rp 3.5M/mo Aug–Oct).</div>
+    <div class="inp-row"><input class="inp" id="aug-bday-inp" type="number" placeholder="Add more to birthday fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#FAC775;color:#1a1714;" onclick="addSavings('bday','august')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('bday','august')">Undo</button></div>
+    <div style="margin-top:10px;font-size:13px;color:#FAC775;font-weight:600;" id="aug-bday-total">Total saved: Rp 0</div>
+  </div>
+
+  <!-- No shopping banner -->
+  <div style="background:var(--danger-light);border:1px solid #F5C1C1;border-radius:var(--radius);padding:13px;margin-bottom:12px;text-align:center;">
+    <div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:4px;">🚫 No Shopping Month</div>
+    <div style="font-size:12px;color:var(--danger);">You committed: zero new PayLater, zero wants spending August–October. Heavy CC installments this month — stay the course.</div>
+  </div>
+
+  <!-- Emergency fund -->
+  <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Emergency fund · BRI</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">🛡 Building slowly</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">August target</div><div style="font-size:15px;font-weight:600;color:#9FE1CB;">Rp 300.000</div></div>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#9FE1CB;" id="aug-emg-saved">Rp 0</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;"><div id="aug-emg-bar" style="height:100%;background:#9FE1CB;border-radius:4px;width:0%;transition:width .4s;"></div></div>
+    <div class="inp-row" style="margin-top:8px;"><input class="inp" id="aug-emg-inp" type="number" placeholder="Add to emergency fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#9FE1CB;color:#0d2a1a;" onclick="addSavings('emg','august')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('emg','august')">Undo</button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="aug-bills-tot"></div></div>
+    <div id="aug-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — August</div><div id="aug-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="aug-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="aug-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="aug-sh-cat"><option value="beauty">Beauty &amp; Self Care</option><option value="health">Health Products</option><option value="clothes">Clothes &amp; Fashion</option><option value="luxury">Luxury</option><option value="food">Food &amp; Drinks</option><option value="travel">Travel</option><option value="family">Family</option><option value="sports">Sports</option><option value="topup">Top Up</option><option value="living">Living Cost</option><option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="aug-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option><option value="cc">Credit Card</option><option value="shopee">Shopee PayLater</option><option value="gopay">GoPay PayLater</option></select><select class="sel" id="aug-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('august')">Log Purchase</button>
+    </div>
+    <div id="aug-sh-summary" onclick="toggleExpList('august')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="aug-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="aug-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="aug-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">August — The honest truth</div>
+    <div id="aug-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- SEPTEMBER -->
+<div id="panel-september" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="sep-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="sep-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="sep-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="sep-extra-val">Rp 0</div>
+      <div class="icard-sub" id="sep-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="sep-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('september')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('september')">Undo</button></div>
+      <div id="sep-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Freedom banner -->
+  <div style="background:linear-gradient(135deg,#0F6E56,#085041);border-radius:var(--radius);padding:16px;margin-bottom:12px;text-align:center;">
+    <div style="font-size:24px;margin-bottom:4px;">🎉</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#9FE1CB;margin-bottom:4px;">PayLater Freedom Month</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);">Last Shopee PayLater: Rp 1.128.470. After this — no more PayLater debt. Ever again.</div>
+  </div>
+
+  <!-- Emergency fund -->
+  <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Emergency fund · BRI</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">🛡 Now we grow it properly</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">September target</div><div style="font-size:15px;font-weight:600;color:#9FE1CB;">Rp 1.500.000</div></div>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#9FE1CB;" id="sep-emg-saved">Rp 0</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;"><div id="sep-emg-bar" style="height:100%;background:#9FE1CB;border-radius:4px;width:0%;transition:width .4s;"></div></div>
+    <div class="inp-row" style="margin-top:8px;"><input class="inp" id="sep-emg-inp" type="number" placeholder="Add to emergency fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#9FE1CB;color:#0d2a1a;" onclick="addSavings('emg','september')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('emg','september')">Undo</button></div>
+  </div>
+
+  <!-- No shopping banner -->
+  <div style="background:var(--danger-light);border:1px solid #F5C1C1;border-radius:var(--radius);padding:13px;margin-bottom:12px;text-align:center;">
+    <div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:4px;">🚫 No Shopping Month</div>
+    <div style="font-size:12px;color:var(--danger);">Still on the commitment — no PayLater, no wants. CC gift installment still running. Hold the line.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="sep-bills-tot"></div></div>
+    <div id="sep-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — September</div><div id="sep-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="sep-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="sep-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="sep-sh-cat"><option value="beauty">Beauty &amp; Self Care</option><option value="health">Health Products</option><option value="clothes">Clothes &amp; Fashion</option><option value="luxury">Luxury</option><option value="food">Food &amp; Drinks</option><option value="travel">Travel</option><option value="family">Family</option><option value="sports">Sports</option><option value="topup">Top Up</option><option value="living">Living Cost</option><option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="sep-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option><option value="cc">Credit Card</option><option value="shopee">Shopee PayLater</option><option value="gopay">GoPay PayLater</option></select><select class="sel" id="sep-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('september')">Log Purchase</button>
+    </div>
+    <div id="sep-sh-summary" onclick="toggleExpList('september')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="sep-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="sep-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="sep-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">September — The honest truth</div>
+    <div id="sep-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- OCTOBER -->
+<div id="panel-october" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="oct-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="oct-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="oct-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="oct-extra-val">Rp 0</div>
+      <div class="icard-sub" id="oct-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="oct-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('october')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('october')">Undo</button></div>
+      <div id="oct-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+  <div style="background:linear-gradient(135deg,#0F6E56,#085041);border-radius:var(--radius);padding:14px;margin-bottom:12px;text-align:center;">
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;color:#9FE1CB;margin-bottom:3px;">🏁 Post-Debt Era Begins</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.6);">PayLater: gone. CC gift final installment this month. From November — pure savings mode.</div>
+  </div>
+
+  <div style="background:var(--danger-light);border:1px solid #F5C1C1;border-radius:var(--radius);padding:13px;margin-bottom:12px;text-align:center;">
+    <div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:4px;">🚫 No Shopping Month</div>
+    <div style="font-size:12px;color:var(--danger);">Commitment active — no new PayLater, no wants purchases.</div>
+  </div>
+  <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Emergency fund · BRI</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">🛡 Emergency Fund · BRI</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">Target</div><div style="font-size:15px;font-weight:600;color:#9FE1CB;">Rp 2.000.000</div></div>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#9FE1CB;" id="oct-emg-saved">Rp 0</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;"><div id="oct-emg-bar" style="height:100%;background:#9FE1CB;border-radius:4px;width:0%;transition:width .4s;"></div></div>
+    <div class="inp-row" style="margin-top:8px;"><input class="inp" id="oct-emg-inp" type="number" placeholder="Add to emergency fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#9FE1CB;color:#0d2a1a;" onclick="addSavings('emg','october')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('emg','october')">Undo</button></div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div class="card-title">GoPay / OVO Top-Up</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div><div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">Top up at start of month — log in Expenditure as Food &amp; Drinks or Transportation.</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="oct-bills-tot"></div></div>
+    <div id="oct-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — October</div><div id="oct-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="oct-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="oct-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="oct-sh-cat"><option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="oct-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option></select><select class="sel" id="oct-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('october')">Log Purchase</button>
+    </div>
+    <div id="oct-sh-summary" onclick="toggleExpList('october')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="oct-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="oct-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="oct-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">October — The honest truth</div>
+    <div id="oct-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- NOVEMBER -->
+<div id="panel-november" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="nov-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="nov-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="nov-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="nov-extra-val">Rp 0</div>
+      <div class="icard-sub" id="nov-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="nov-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('november')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('november')">Undo</button></div>
+      <div id="nov-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+  <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Emergency fund · BRI</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">🛡 Emergency Fund · BRI</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">Target</div><div style="font-size:15px;font-weight:600;color:#9FE1CB;">Rp 2.000.000</div></div>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#9FE1CB;" id="nov-emg-saved">Rp 0</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;"><div id="nov-emg-bar" style="height:100%;background:#9FE1CB;border-radius:4px;width:0%;transition:width .4s;"></div></div>
+    <div class="inp-row" style="margin-top:8px;"><input class="inp" id="nov-emg-inp" type="number" placeholder="Add to emergency fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#9FE1CB;color:#0d2a1a;" onclick="addSavings('emg','november')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('emg','november')">Undo</button></div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div class="card-title">GoPay / OVO Top-Up</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div><div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">Top up at start of month — log in Expenditure as Food &amp; Drinks or Transportation.</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="nov-bills-tot"></div></div>
+    <div id="nov-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — November</div><div id="nov-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="nov-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="nov-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="nov-sh-cat"><option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="nov-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option></select><select class="sel" id="nov-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('november')">Log Purchase</button>
+    </div>
+    <div id="nov-sh-summary" onclick="toggleExpList('november')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="nov-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="nov-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="nov-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">November — The honest truth</div>
+    <div id="nov-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- DECEMBER -->
+<div id="panel-december" class="panel">
+  <div class="sgrid">
+    <div class="sc"><div class="sc-label">Income</div><div class="sc-val green" id="dec-inc">—</div></div>
+    <div class="sc"><div class="sc-label">Committed</div><div class="sc-val red" id="dec-exp">—</div></div>
+    <div class="sc"><div class="sc-label">Remaining</div><div class="sc-val" id="dec-rem">—</div></div>
+  </div>
+  <div class="igrid">
+    <div class="icard"><div class="icard-label">Salary</div><div class="icard-val green">Rp 13.325.000</div></div>
+    <div class="icard">
+      <div class="icard-label">Business Trip / Extra</div>
+      <div class="icard-val green" id="dec-extra-val">Rp 0</div>
+      <div class="icard-sub" id="dec-extra-sub"></div>
+      <div class="inp-row"><input class="inp" id="dec-extra-inp" type="number" placeholder="Amount (Rp)"/><button class="btn btn-a" onclick="addExtra('december')">Add</button><button class="btn" style="background:var(--warning);" onclick="undoExtra('december')">Undo</button></div>
+      <div id="dec-extra-history" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;"></div>
+    </div>
+  </div>
+  <div style="background:linear-gradient(135deg,#1A1714,#3a1a1a);border-radius:var(--radius);padding:14px;margin-bottom:12px;text-align:center;">
+    <div style="font-size:22px;margin-bottom:4px;">🎄✨</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;color:#FAC775;margin-bottom:3px;">December — End of Year</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.5);">You made it through 2026. How far you've come.</div>
+  </div>
+
+  <div class="card" style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border:none;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;">Emergency fund · BRI</div><div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;">🛡 Emergency Fund · BRI</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">Target</div><div style="font-size:15px;font-weight:600;color:#9FE1CB;">Rp 2.500.000</div></div>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#9FE1CB;" id="dec-emg-saved">Rp 0</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:4px;height:5px;overflow:hidden;margin:6px 0;"><div id="dec-emg-bar" style="height:100%;background:#9FE1CB;border-radius:4px;width:0%;transition:width .4s;"></div></div>
+    <div class="inp-row" style="margin-top:8px;"><input class="inp" id="dec-emg-inp" type="number" placeholder="Add to emergency fund (Rp)" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:white;"/><button class="btn" style="background:#9FE1CB;color:#0d2a1a;" onclick="addSavings('emg','december')">Save</button><button class="btn" style="background:rgba(255,255,255,.15);color:white;" onclick="undoSavings('emg','december')">Undo</button></div>
+  </div>
+  <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div><div class="card-title">GoPay / OVO Top-Up</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Covers food &amp; transport</div></div>
+      <div style="text-align:right;"><div style="font-size:10px;color:var(--text-hint);margin-bottom:2px;">Max budget</div><div style="font-size:15px;font-weight:600;color:var(--warning);">Rp 1.000.000</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);padding:8px 10px;background:var(--warning-light);border-radius:var(--radius-sm);">Top up at start of month — log in Expenditure as Food &amp; Drinks or Transportation.</div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Bills due</div><div class="card-total" id="dec-bills-tot"></div></div>
+    <div id="dec-bills"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Expenditure — December</div><div id="dec-exp-total" style="font-size:13px;font-weight:600;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px;">
+      <input class="inp" id="dec-sh-name" placeholder="Item"/>
+      <div style="display:flex;gap:7px;"><input class="inp" id="dec-sh-amt" type="number" placeholder="Amount (Rp)" style="flex:1;"/><select class="sel" id="dec-sh-cat"><option value="beauty">Beauty &amp; Self Care</option>
+          <option value="health">Health Products</option>
+          <option value="clothes">Clothes &amp; Fashion</option>
+          <option value="luxury">Luxury</option>
+          <option value="food">Food &amp; Drinks</option>
+          <option value="travel">Travel</option>
+          <option value="family">Family</option>
+          <option value="sports">Sports</option>
+          <option value="topup">Top Up</option>
+          <option value="living">Living Cost</option>
+          <option value="other">Other</option></select></div>
+      <div style="display:flex;gap:7px;"><select class="sel" id="dec-sh-fund" style="flex:1;"><option value="mandiri">Debit Card</option>
+          <option value="cc">Credit Card</option>
+          <option value="shopee">Shopee PayLater</option>
+          <option value="gopay">GoPay PayLater</option></select><select class="sel" id="dec-sh-type"><option value="want">Want</option><option value="need">Need</option></select></div>
+      <button class="btn btn-a" onclick="addShopInline('december')">Log Purchase</button>
+    </div>
+    <div id="dec-sh-summary" onclick="toggleExpList('december')" style="cursor:pointer;font-size:12px;color:var(--text-muted);padding:6px 0;display:none;"><span id="dec-sh-summary-text"></span><span style="color:var(--accent);font-weight:500;margin-left:6px;">tap to view ↓</span></div>
+    <div id="dec-sh-list" style="display:none;"></div>
+  </div>
+  <div class="card" id="dec-month-summary" style="background:var(--text);border:none;">
+    <div style="font-family:'DM Serif Display',serif;font-size:15px;color:white;margin-bottom:8px;">December — The honest truth</div>
+    <div id="dec-summary-body" style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.8;">Log your expenditure to see your summary.</div>
+  </div>
+</div>
+
+<!-- ANNUAL SUMMARY -->
+<div id="panel-annual" class="panel">
+  <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:2px;">Recap 2026</div>
+  <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Your full year — the wins, the waste, the habits, and the truth.</div>
+  <div id="annual-body">
+    <div class="empty" style="padding:30px;">Start logging monthly data — your 2026 recap will build here automatically.</div>
+  </div>
+</div>
+
+<!-- DEBT & CREDIT -->
+<div id="panel-debt" class="panel">
+
+  <!-- SECTION 1: OUTSTANDING DEBT -->
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;color:var(--text-muted);margin-bottom:10px;">Outstanding Debt</div>
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;padding:9px 12px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);">Your real remaining debt right now. Mark each as paid when done. Tap amounts to edit.</div>
+
+  <div class="card">
+    <div class="card-hdr" style="margin-bottom:10px;"><div class="card-title">Shopee PayLater</div><div class="badge bd" id="shopee-badge">—</div></div>
+    <div id="shopee-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr" style="margin-bottom:10px;"><div class="card-title">GoPay PayLater</div><div class="badge bd" id="gopay-badge">—</div></div>
+    <div id="gopay-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr" style="margin-bottom:10px;"><div class="card-title">Credit Card Installments</div><div class="badge bd" id="cc-badge">—</div></div>
+    <div id="cc-list"></div>
+  </div>
+
+  <!-- TOTAL OUTSTANDING -->
+  <div class="card" style="background:var(--danger-light);border-color:#F5C1C1;margin-bottom:24px;">
+    <div style="display:flex;justify-content:space-between;font-weight:600;font-size:15px;margin-bottom:6px;">
+      <span>Total outstanding debt</span>
+      <span style="color:var(--danger);" id="grand-debt">—</span>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);">Clears fully by September 2026 if no new debt added.</div>
+  </div>
+
+  <!-- SECTION 2: CC SPENDING TRACKER -->
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:600;color:var(--text-muted);margin-bottom:10px;">Credit Card Usage</div>
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;padding:9px 12px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);">Enter your real CC bill each month. I'll break it down into installments, subscriptions, and your own spending.</div>
+
+  <div class="card" style="border-color:#E8C9A5;background:var(--accent-light);">
+    <div id="cc-actual-list"></div>
+  </div>
+
+</div>
+
+</div>
+
+<script>
+const SUPA_URL='https://eqtjoqthizublfzklzwm.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxdGpvcXRoaXp1YmxmemtsendtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMTMwMzMsImV4cCI6MjA4OTU4OTAzM30.cSMW52LYFI1yWBokWsXbd0ArkPxzXPkax7qbcY9xmJw';
+const HEADERS={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=minimal'};
+
+const SAL=13325000;
+const CATS={beauty:'Beauty & Self Care',health:'Health Products',clothes:'Clothes & Fashion',luxury:'Luxury',food:'Food & Drinks',travel:'Travel',family:'Family',sports:'Sports',topup:'Top Up',living:'Living Cost',other:'Other'};
+const CCOLS={beauty:'#E06B9A',health:'var(--success)',clothes:'var(--accent)',luxury:'var(--warning)',food:'var(--danger)',travel:'#0F6E56',family:'var(--text-muted)',sports:'#2E86AB',topup:'var(--purple)',living:'#5F5E5A',other:'var(--text-hint)'};
+const DEF={shopee:[{due:'11 April',amount:5754860,billKey:'apr-shopee'},{due:'11 May',amount:3653298,billKey:'may-shopee'},{due:'11 June',amount:2771975,billKey:'jun-shopee'},{due:'11 July',amount:2334762,billKey:null},{due:'11 August',amount:2174718,billKey:null},{due:'11 September',amount:1128470,billKey:null}],gopay:[{due:'1 April',amount:187477,billKey:'apr-gopay'},{due:'1 May',amount:398817,billKey:'may-gopay'}],cc:[{label:'Phuket ticket',amount:539831,months:6,startYear:2026,startMonth:1},{label:'Laser removal',amount:226456,months:9,startYear:2026,startMonth:2},{label:'Laser whitening',amount:223427,months:9,startYear:2026,startMonth:2}]};
+
+let D={debts:JSON.parse(JSON.stringify(DEF)),paid:{},grab:{january:0,february:0,march:0,april:0,may:0,june:0,july:0,august:0,september:0,october:0,november:0,december:0},grabLog:{january:[],february:[],march:[],april:[],may:[],june:[],july:[],august:[],september:[],october:[],november:[],december:[]},extra:{january:0,february:0,march:0,april:0,may:0,june:0,july:0,august:0,september:0,october:0,november:0,december:0},extraList:{january:[],february:[],march:[],april:[],may:[],june:[],july:[],august:[],september:[],october:[],november:[],december:[]},outfit:0,outfitLog:[],shop:[],shopFilter:'all',ccActual:{april:3959444,may:null,june:null},mandiriSpent:{},mandiriLog:{},savings:{bday:{},emg:{}}};
+let allocMonth='april';
+let saveTimer=null;
+
+function setAllocMonth(month,el){
+  allocMonth=month;
+  document.querySelectorAll('.month-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderAllocate();
+}
+
+function renderAllocate(){
+  const m=allocMonth;
+  const bills=getBills()[m];
+  const extra=D.extra[m]||0;
+  const totalIncome=SAL+extra;
+
+  // BCA = all bills
+  let bcaTotal=0;
+  const bcaItems=bills.map(b=>{bcaTotal+=b.amount;return b;});
+
+  // BRI savings per month — all planned amounts
+  const briAmounts={
+    january:0,february:0,march:0,april:0,
+    may:3700000,june:6500000,
+    july:500000,august:300000,september:1500000,
+    october:2000000,november:2000000,december:2500000
+  };
+  const briLabels={
+    january:'Jan/Feb — debt heavy, no savings target yet',
+    february:'Jan/Feb — debt heavy, no savings target yet',
+    march:'March — focus on clearing bills first',
+    april:'April is very tight — no savings this month',
+    may:'Phuket fund — save and lock it away',
+    june:'Phuket fund — final push before the trip',
+    july:'🎂 Birthday fund (Rp 3M) + 🛡 Emergency (Rp 500K)',
+    august:'🎂 Birthday fund top-up + 🛡 Emergency (Rp 300K)',
+    september:'🛡 Emergency fund growing — PayLater clears this month!',
+    october:'🛡 Emergency fund Rp 2M — all-out savings mode',
+    november:'🛡 Emergency fund Rp 2M — debt-free month',
+    december:'🛡 Emergency fund Rp 2.5M — finish the year strong'
+  };
+  const briItemLabels={
+    january:'No savings target',february:'No savings target',
+    march:'Clear bills, keep buffer',april:'No savings — bills too heavy',
+    may:'Phuket fund contribution',june:'Phuket fund final contribution',
+    july:'Birthday fund + Emergency fund',august:'Birthday fund + Emergency fund',
+    september:'Emergency fund contribution',
+    october:'Emergency fund contribution',november:'Emergency fund contribution',december:'Emergency fund contribution'
+  };
+  const briAmt=briAmounts[m]||0;
+
+  // Mandiri = whatever is left
+  const mandiriAmt=Math.max(0,totalIncome-bcaTotal-briAmt);
+  const mSpent=(D.shop||[]).filter(e=>e.month===m&&(e.fund||'mandiri')==='mandiri').reduce((a,e)=>a+e.amount,0);
+  const mRem=mandiriAmt-mSpent;
+
+  // Update note
+  const noteEl=document.getElementById('alloc-note');
+  if(noteEl)noteEl.textContent=`Salary: ${fmt(SAL)}${extra>0?' · Extra: '+fmt(extra):''} · Total: ${fmt(totalIncome)}`;
+
+  // BCA
+  const bcaEl=document.getElementById('bca-amount');
+  if(bcaEl)bcaEl.textContent=fmt(bcaTotal);
+  const bcaItemsEl=document.getElementById('bca-items');
+  if(bcaItemsEl)bcaItemsEl.innerHTML=bcaItems.map(b=>`<div class="bank-item"><span class="bank-item-name">${b.name}</span><span class="bank-item-amt">${fmt(b.amount)}</span></div>`).join('');
+
+  // BRI
+  const briEl=document.getElementById('bri-amount');
+  if(briEl)briEl.textContent=briAmt>0?fmt(briAmt):'Rp 0';
+  const briSub=document.getElementById('bri-sub');
+  if(briSub)briSub.textContent=briLabels[m]||'Savings contribution';
+  const briItemLbl=document.getElementById('bri-item-label');
+  if(briItemLbl)briItemLbl.textContent=briItemLabels[m]||'Savings contribution';
+  const briPhuket=document.getElementById('bri-phuket');
+  if(briPhuket)briPhuket.textContent=briAmt>0?fmt(briAmt):'—';
+
+  // Mandiri
+  const mAllocEl=document.getElementById('mandiri-amount');
+  const mAllocDisp=document.getElementById('mandiri-alloc');
+  const mSpentEl=document.getElementById('mandiri-spent-disp');
+  const mRemEl=document.getElementById('mandiri-rem-disp');
+  const mSub=document.getElementById('mandiri-sub');
+  if(mAllocEl)mAllocEl.textContent=fmt(mandiriAmt);
+  if(mAllocDisp)mAllocDisp.textContent=fmt(mandiriAmt);
+  if(mSpentEl)mSpentEl.textContent=fmt(mSpent);
+  if(mRemEl){mRemEl.textContent=mRem>=0?fmt(mRem):'−'+fmt(Math.abs(mRem));mRemEl.style.color=mRem<0?'#ffaaaa':mRem<500000?'#ffd080':'white';}
+  if(mSub)mSub.textContent='Daily life · Grab · Emergencies';
+}
+
+function getMarchBillAmount(key,defaultVal){
+  if(D.marchBills&&D.marchBills[key]!=null)return D.marchBills[key];
+  return defaultVal;
+}
+function editMarchBill(key,label,defaultVal){
+  const current=getMarchBillAmount(key,defaultVal);
+  const nv=prompt('Edit '+label+' for March (Rp):',current);
+  if(nv===null)return;
+  const p=parseFloat(nv.replace(/[^0-9.]/g,''));if(isNaN(p)||p<0)return alert('Invalid amount.');
+  if(!D.marchBills)D.marchBills={};
+  D.marchBills[key]=p;save();
+  const b=getBills();renderBills(b.march,'mar-bills','mar-bills-tot','march');updateSum('march');
+}
+
+function setSyncStatus(status,label){
+  const dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');
+  dot.className='sync-dot '+status;lbl.textContent=label;
+}
+
+async function loadFromSupabase(){
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/bella_dashboard?id=eq.main&select=data`,{headers:HEADERS});
+    if(!res.ok)throw new Error('Load failed');
+    const rows=await res.json();
+    if(rows.length>0&&rows[0].data&&Object.keys(rows[0].data).length>0){
+      const remote=rows[0].data;
+      D={...D,...remote};
+    }
+    setSyncStatus('ok','Synced');
+  }catch(e){
+    setSyncStatus('err','Offline');
+    const local=localStorage.getItem('bella_fallback');
+    if(local){try{const ld=JSON.parse(local);D={...D,...ld};}catch(e2){}}
+  }
+  // Always ensure all required keys exist after any load
+  if(!D.debts||!D.debts.shopee)D.debts=JSON.parse(JSON.stringify(DEF));
+  if(!D.ccActual)D.ccActual={april:3959444,may:null,june:null};
+  if(!D.marchBills)D.marchBills={};
+  if(!D.grab)D.grab={};
+  ['march','april','may','june'].forEach(m=>{
+    if(D.grab[m]==null)D.grab[m]=0;
+    if(!D.grabLog)D.grabLog={};
+    if(!D.grabLog[m])D.grabLog[m]=[];
+    if(!D.extra)D.extra={};
+    if(D.extra[m]==null)D.extra[m]=0;
+    if(!D.extraList)D.extraList={};
+    if(!D.extraList[m])D.extraList[m]=[];
+  });
+  if(!D.outfitLog)D.outfitLog=[];
+  if(!D.mandiriSpent)D.mandiriSpent={};
+  if(!D.mandiriLog)D.mandiriLog={};
+  if(!D.savings)D.savings={bday:{},emg:{}};
+  if(!D.shop)D.shop=[];
+  if(!D.paid)D.paid={};
+}
+
+async function init(){
+  const timeout=new Promise(r=>setTimeout(r,5000));
+  await Promise.race([loadFromSupabase(),timeout]);
+  renderAll();
+  const ls=document.getElementById('loading');
+  if(ls)ls.style.display='none';
+}
+
+async function saveToSupabase(){
+  setSyncStatus('saving','Saving...');
+  localStorage.setItem('bella_fallback',JSON.stringify(D));
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/bella_dashboard`,{
+      method:'POST',
+      headers:{...HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({id:'main',data:D,updated_at:new Date().toISOString()})
+    });
+    if(!res.ok)throw new Error('Save failed');
+    setSyncStatus('ok','Synced');
+  }catch(e){
+    setSyncStatus('err','Sync failed — saved locally');
+  }
+}
+
+function save(){
+  localStorage.setItem('bella_fallback',JSON.stringify(D));
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveToSupabase,800);
+}
+
+function fmt(n){return'Rp '+Math.round(n).toLocaleString('id-ID');}
+function fmtS(n){if(n>=1000000)return'Rp '+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'Rp '+Math.round(n/1000)+'K';return fmt(n);}
+
+const CC_SUBS=169000+135999;
+function billAmt(key,defaultVal){
+  return(D.billOverrides&&D.billOverrides[key]!=null)?D.billOverrides[key]:defaultVal;
+}
+
+function getBills(){
+  const sm={};D.debts.shopee.forEach(d=>{if(d.billKey)sm[d.billKey]=d.amount;});
+  const gm={};D.debts.gopay.forEach(d=>{if(d.billKey)gm[d.billKey]=d.amount;});
+  const cc=D.debts.cc.reduce((a,c)=>a+c.amount,0);
+  const aprCC=D.ccActual&&D.ccActual.april!=null?D.ccActual.april:3959444;
+  const mayCC=D.ccActual&&D.ccActual.may!=null?D.ccActual.may:cc;
+  const junCC=D.ccActual&&D.ccActual.june!=null?D.ccActual.june:cc;
+  return{
+    march:[{name:'CC Bill',due:'1 March',amount:billAmt('mar-cc',getMarchBillAmount('mar-cc',3959444)),key:'mar-cc'},{name:'GoPay PayLater',due:'1 March',amount:billAmt('mar-gopay',getMarchBillAmount('mar-gopay',187477)),key:'mar-gopay'},{name:'Shopee PayLater',due:'11 March',amount:billAmt('mar-shopee',getMarchBillAmount('mar-shopee',5754860)),key:'mar-shopee'},{name:'Catering',due:'March',amount:billAmt('mar-catering',1550000),key:'mar-catering'},{name:'Mom allowance',due:'March',amount:billAmt('mar-mom',getMarchBillAmount('mar-mom',500000)),key:'mar-mom'},{name:'Rent',due:'March',amount:billAmt('mar-rent',2800000),key:'mar-rent'}],
+    april:[{name:'CC Bill',due:'1 April',amount:billAmt('apr-cc',aprCC),key:'apr-cc'},{name:'GoPay PayLater',due:'1 April',amount:billAmt('apr-gopay',gm['apr-gopay']||187477),key:'apr-gopay'},{name:'Shopee PayLater',due:'11 April',amount:billAmt('apr-shopee',sm['apr-shopee']||5754860),key:'apr-shopee'},{name:'Catering',due:'15–20 April',amount:billAmt('apr-catering',1550000),key:'apr-catering'},{name:'Mom allowance',due:'April',amount:billAmt('apr-mom',500000),key:'apr-mom'},{name:'Japan spending',due:'29 Mar – 4 Apr',amount:billAmt('apr-japan',1500000),key:'apr-japan'},{name:'Rent',due:'April',amount:billAmt('apr-rent',2800000),key:'apr-rent'}],
+    may:[{name:'CC Bill',due:'1 May',amount:billAmt('may-cc',mayCC),key:'may-cc'},{name:'GoPay PayLater',due:'1 May',amount:billAmt('may-gopay',gm['may-gopay']||398817),key:'may-gopay'},{name:'Shopee PayLater',due:'11 May',amount:billAmt('may-shopee',sm['may-shopee']||3653298),key:'may-shopee'},{name:'Catering',due:'1–20 May',amount:billAmt('may-catering',1550000),key:'may-catering'},{name:'Mom allowance',due:'May',amount:billAmt('may-mom',500000),key:'may-mom'},{name:'Rent',due:'May',amount:billAmt('may-rent',2800000),key:'may-rent'}],
+    june:[{name:'CC Bill',due:'1 June',amount:billAmt('jun-cc',junCC),key:'jun-cc'},{name:'Shopee PayLater',due:'11 June',amount:billAmt('jun-shopee',sm['jun-shopee']||2771975),key:'jun-shopee'},{name:'Catering',due:'June',amount:billAmt('jun-catering',1550000),key:'jun-catering'},{name:'Mom allowance',due:'June',amount:billAmt('jun-mom',500000),key:'jun-mom'},{name:'Rent',due:'June',amount:billAmt('jun-rent',2800000),key:'jun-rent'}],
+    july:[{name:'CC Bill',due:'1 July',amount:billAmt('jul-cc',cc+CC_SUBS),key:'jul-cc'},{name:'Shopee PayLater',due:'11 July',amount:billAmt('jul-shopee',2334762),key:'jul-shopee'},{name:'Catering',due:'July',amount:billAmt('jul-catering',1550000),key:'jul-catering'},{name:'Mom allowance',due:'July',amount:billAmt('jul-mom',500000),key:'jul-mom'},{name:'Rent',due:'July',amount:billAmt('jul-rent',2800000),key:'jul-rent'}],
+    august:[{name:'CC Bill (incl. Shala gift installment)',due:'1 August',amount:billAmt('aug-cc',cc+CC_SUBS+3333333),key:'aug-cc'},{name:'Shopee PayLater',due:'11 August',amount:billAmt('aug-shopee',2174718),key:'aug-shopee'},{name:'Catering',due:'August',amount:billAmt('aug-catering',1550000),key:'aug-catering'},{name:'Mom allowance',due:'August',amount:billAmt('aug-mom',500000),key:'aug-mom'},{name:'Rent',due:'August',amount:billAmt('aug-rent',2800000),key:'aug-rent'}],
+    september:[{name:'CC Bill (incl. Shala gift installment)',due:'1 September',amount:billAmt('sep-cc',cc+CC_SUBS+3333333),key:'sep-cc'},{name:'Shopee PayLater',due:'11 September',amount:billAmt('sep-shopee',1128470),key:'sep-shopee'},{name:'Catering',due:'September',amount:billAmt('sep-catering',1550000),key:'sep-catering'},{name:'Mom allowance',due:'September',amount:billAmt('sep-mom',500000),key:'sep-mom'},{name:'Rent',due:'September',amount:billAmt('sep-rent',2800000),key:'sep-rent'}],
+    january:[{name:'CC Bill',due:'1 January',amount:billAmt('jan-cc',cc+CC_SUBS),key:'jan-cc'},{name:'GoPay PayLater',due:'1 January',amount:billAmt('jan-gopay',187477),key:'jan-gopay'},{name:'Shopee PayLater',due:'11 January',amount:billAmt('jan-shopee',5754860),key:'jan-shopee'},{name:'Catering',due:'January',amount:billAmt('jan-catering',1550000),key:'jan-catering'},{name:'Mom allowance',due:'January',amount:billAmt('jan-mom',500000),key:'jan-mom'},{name:'Rent',due:'January',amount:billAmt('jan-rent',2800000),key:'jan-rent'}],
+    february:[{name:'CC Bill',due:'1 February',amount:billAmt('feb-cc',cc+CC_SUBS),key:'feb-cc'},{name:'GoPay PayLater',due:'1 February',amount:billAmt('feb-gopay',187477),key:'feb-gopay'},{name:'Shopee PayLater',due:'11 February',amount:billAmt('feb-shopee',5754860),key:'feb-shopee'},{name:'Catering',due:'February',amount:billAmt('feb-catering',1550000),key:'feb-catering'},{name:'Mom allowance',due:'February',amount:billAmt('feb-mom',500000),key:'feb-mom'},{name:'Rent',due:'February',amount:billAmt('feb-rent',2800000),key:'feb-rent'}],
+    october:[{name:'CC Bill (incl. Shala gift final installment)',due:'1 October',amount:billAmt('oct-cc',cc+CC_SUBS+3333333),key:'oct-cc'},{name:'Catering',due:'October',amount:billAmt('oct-catering',1550000),key:'oct-catering'},{name:'Mom allowance',due:'October',amount:billAmt('oct-mom',1000000),key:'oct-mom'},{name:'Rent',due:'October',amount:billAmt('oct-rent',2800000),key:'oct-rent'}],
+    november:[{name:'CC Bill',due:'1 November',amount:billAmt('nov-cc',cc+CC_SUBS),key:'nov-cc'},{name:'Catering',due:'November',amount:billAmt('nov-catering',1550000),key:'nov-catering'},{name:'Mom allowance',due:'November',amount:billAmt('nov-mom',1000000),key:'nov-mom'},{name:'Rent',due:'November',amount:billAmt('nov-rent',2800000),key:'nov-rent'}],
+    december:[{name:'CC Bill',due:'1 December',amount:billAmt('dec-cc',cc+CC_SUBS),key:'dec-cc'},{name:'Catering',due:'December',amount:billAmt('dec-catering',1550000),key:'dec-catering'},{name:'Mom allowance',due:'December',amount:billAmt('dec-mom',1000000),key:'dec-mom'},{name:'Rent',due:'December',amount:billAmt('dec-rent',2800000),key:'dec-rent'}]
+  };
+}
+
+function editBillAmount(key,name,currentAmount){
+  const nv=prompt('Edit "'+name+'" amount (Rp):',currentAmount);
+  if(nv===null)return;
+  const p=parseFloat(nv.replace(/[^0-9.]/g,''));if(isNaN(p)||p<0)return alert('Invalid amount.');
+  if(!D.billOverrides)D.billOverrides={};
+  D.billOverrides[key]=p;save();
+  // re-render all months since BCA allocation may change
+  const b=getBills();
+  ['march','april','may','june'].forEach(m=>{
+    const pr=m==='march'?'mar':m==='april'?'apr':m==='may'?'may':'jun';
+    renderBills(b[m],pr+'-bills',pr+'-bills-tot',m);
+    updateSum(m);
+  });
+  renderAllocate();
+}
+
+function renderBills(bills,listId,totId,month){
+  const el=document.getElementById(listId);if(!el)return;
+  let tot=0;bills.forEach(b=>tot+=b.amount);
+  el.innerHTML='';
+  bills.forEach(b=>{
+    const isPaid=D.paid[b.key];
+    const div=document.createElement('div');div.className='bill'+(isPaid?' paid-state':'');
+    const editBtn=`<button onclick="editBillAmount('${b.key}','${b.name}',${b.amount})" style="background:none;border:none;color:var(--text-hint);cursor:pointer;font-size:13px;padding:0 4px;" title="Edit amount">✎</button>`;
+    div.innerHTML=`<div class="bill-row"><div class="bdot ${isPaid?'paid':'unpaid'}"></div><div class="binfo"><div class="bname">${b.name}</div><div class="bdue">Due: ${b.due}</div></div><div class="bamt">${fmt(b.amount)}</div>${editBtn}<button class="bchk ${isPaid?'checked':''}" onclick="togglePaid('${b.key}','${listId}','${totId}','${month}')">${isPaid?'✓':''}</button></div>`;
+    el.appendChild(div);
+  });
+  const tEl=document.getElementById(totId);if(tEl)tEl.textContent=fmt(tot);
+}
+
+// Maps bill keys to their debt counterpart keys
+const BILL_TO_DEBT={
+  'apr-shopee':'shopee-debt-0','may-shopee':'shopee-debt-1','jun-shopee':'shopee-debt-2',
+  'mar-shopee':'shopee-debt-0',
+  'apr-gopay':'gopay-debt-0','may-gopay':'gopay-debt-1',
+  'mar-gopay':'gopay-debt-0'
+};
+
+function togglePaid(key,listId,totId,month){
+  D.paid[key]=!D.paid[key];
+  // sync to debt section
+  const debtKey=BILL_TO_DEBT[key];
+  if(debtKey!=null)D.paid[debtKey]=D.paid[key];
+  // auto-advance CC installment payments when CC bill is ticked
+  if(key.endsWith('-cc')&&D.paid[key]){
+    if(!D.ccInstPaid)D.ccInstPaid={};
+    const schedTotals=[6,9,9];
+    D.debts.cc.forEach((d,i)=>{
+      const cur=D.ccInstPaid[i]||0;
+      if(cur<schedTotals[i])D.ccInstPaid[i]=cur+1;
+    });
+  }
+  save();
+  const b=getBills()[month];renderBills(b,listId,totId,month);updateSum(month);
+  const debtPanel=document.getElementById('panel-debt');
+  if(debtPanel&&debtPanel.classList.contains('active'))renderDebt();
+}
+
+function updateSum(month){
+  const bills=getBills()[month];
+  const extra=D.extra[month]||0;
+  const inc=SAL+extra;
+  let committed=0;bills.forEach(b=>committed+=b.amount);
+  // Add debit card expenditure (cash actually spent from Mandiri)
+  const debitSpent=(D.shop||[]).filter(e=>e.month===month&&(e.fund||'mandiri')==='mandiri').reduce((a,e)=>a+e.amount,0);
+  const ccSpent=(D.shop||[]).filter(e=>e.month===month&&e.fund==='cc').reduce((a,e)=>a+e.amount,0);
+  const totalSpent=debitSpent+ccSpent;
+  const rem=inc-committed-totalSpent;
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const ie=document.getElementById(p+'-inc'),ee=document.getElementById(p+'-exp'),re=document.getElementById(p+'-rem');
+  if(ie)ie.textContent=fmt(inc);
+  if(ee)ee.textContent=fmt(committed); // Committed = bills only
+  if(re){re.textContent=(rem<0?'−':'')+fmt(Math.abs(rem));re.className='sc-val '+(rem>=500000?'green':rem>=0?'amber':'red');}
+  // Update the Remaining label to clarify
+  const reLabel=document.getElementById(p+'-rem-label');
+  if(reLabel&&totalSpent>0)reLabel.textContent='Remaining (after bills + Rp '+Math.round(totalSpent/1000)+'K spent)';
+  if(month===allocMonth)renderAllocate();
+}
+
+function addExtra(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const inp=document.getElementById(p+'-extra-inp');const val=parseFloat(inp.value);if(!val||val<=0)return;
+  D.extra[month]=(D.extra[month]||0)+val;if(!D.extraList[month])D.extraList[month]=[];D.extraList[month].push(val);save();inp.value='';updExtra(month);updateSum(month);renderAnnualSummary();
+}
+function undoExtra(month){
+  if(!D.extraList||!D.extraList[month]||D.extraList[month].length===0)return;
+  const last=D.extraList[month].pop();D.extra[month]=Math.max(0,(D.extra[month]||0)-last);save();updExtra(month);updateSum(month);renderAnnualSummary();
+}
+function updExtra(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const v=document.getElementById(p+'-extra-val'),s=document.getElementById(p+'-extra-sub');
+  const tot=D.extra[month]||0;if(v)v.textContent=fmt(tot);
+  const list=D.extraList[month]||[];
+  if(s)s.textContent=list.length>0?list.length+' entr'+(list.length>1?'ies':'y')+' — tap to view':'';
+  const hist=document.getElementById(p+'-extra-history');
+  if(hist){
+    if(list.length===0){hist.innerHTML='';hist.style.display='none';return;}
+    hist.innerHTML=list.map((amt,i)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <span style="color:var(--text-muted);">Entry ${i+1}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-weight:600;color:var(--success);">${fmt(amt)}</span>
+          <button onclick="removeExtra('${month}',${i})" style="background:none;border:none;color:var(--text-hint);cursor:pointer;font-size:14px;padding:0 2px;">×</button>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function toggleExtraHistory(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const hist=document.getElementById(p+'-extra-history');
+  if(!hist)return;
+  const list=D.extraList[month]||[];
+  if(list.length===0)return;
+  hist.style.display=hist.style.display==='none'?'block':'none';
+}
+
+function removeExtra(month,idx){
+  if(!D.extraList||!D.extraList[month])return;
+  const amt=D.extraList[month][idx];
+  D.extraList[month].splice(idx,1);
+  D.extra[month]=Math.max(0,(D.extra[month]||0)-amt);
+  save();updExtra(month);updateSum(month);renderAnnualSummary();
+}
+
+function addGrab(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const inp=document.getElementById(p+'-grab-inp');const val=parseFloat(inp.value);if(!val||val<=0)return;
+  D.grab[month]=(D.grab[month]||0)+val;
+  if(!D.grabLog)D.grabLog={};if(!D.grabLog[month])D.grabLog[month]=[];D.grabLog[month].push(val);
+  save();inp.value='';updGrab(month);renderAnnualSummary();
+}
+function undoGrab(month){
+  if(!D.grabLog||!D.grabLog[month]||D.grabLog[month].length===0)return;
+  const last=D.grabLog[month].pop();D.grab[month]=Math.max(0,(D.grab[month]||0)-last);save();updGrab(month);renderAnnualSummary();
+}
+function resetGrab(month){
+  if(!confirm('Reset all Grab/Gojek entries for '+month.charAt(0).toUpperCase()+month.slice(1)+'?'))return;
+  D.grab[month]=0;if(D.grabLog)D.grabLog[month]=[];save();updGrab(month);renderAnnualSummary();
+}
+function updGrab(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const cap=month==='april'?750000:month==='may'?850000:1000000;
+  const sp=D.grab[month]||0;const rem=cap-sp;const pct=Math.min((sp/cap)*100,100);
+  const re=document.getElementById(p+'-grab-rem'),ba=document.getElementById(p+'-grab-bar'),lb=document.getElementById(p+'-grab-lbl'),wa=document.getElementById(p+'-grab-warn');
+  if(re)re.textContent=rem>=0?fmt(rem):'−'+fmt(Math.abs(rem));
+  if(ba){ba.style.width=pct+'%';ba.className='pbar2 '+(pct>=100?'d':pct>=75?'w':'s');}
+  if(lb)lb.textContent='Spent: '+fmt(sp);if(wa)wa.className='warn'+(sp>cap?' show':'');
+}
+
+function addOutfit(){
+  const inp=document.getElementById('may-outfit-inp');const val=parseFloat(inp.value);if(!val||val<=0)return;
+  D.outfit=(D.outfit||0)+val;if(!D.outfitLog)D.outfitLog=[];D.outfitLog.push(val);save();inp.value='';updOutfit();
+}
+function undoOutfit(){
+  if(!D.outfitLog||D.outfitLog.length===0)return;
+  const last=D.outfitLog.pop();D.outfit=Math.max(0,(D.outfit||0)-last);save();updOutfit();
+}
+function resetOutfit(){
+  if(!confirm('Reset all Phuket outfit entries?'))return;
+  D.outfit=0;D.outfitLog=[];save();updOutfit();
+}
+function updOutfit(){
+  const sp=D.outfit||0;const rem=1000000-sp;
+  const se=document.getElementById('may-outfit-sp'),re=document.getElementById('may-outfit-rem'),wa=document.getElementById('may-outfit-warn');
+  if(se)se.textContent=fmt(sp);if(re){re.textContent=rem>=0?fmt(rem):'−'+fmt(Math.abs(rem));re.style.color=rem>=0?'var(--success)':'var(--danger)';}
+  if(wa)wa.className='warn'+(sp>1000000?' show':'');
+}
+
+const FUNDS={mandiri:'Debit Card',shopee:'Shopee PayLater',gopay:'GoPay PayLater',cc:'Credit Card'};
+const FUND_COLORS={mandiri:'var(--warning)',shopee:'var(--danger)',gopay:'var(--purple)',cc:'var(--success)'};
+
+function addShopInline(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const name=document.getElementById(p+'-sh-name').value.trim();
+  const amt=parseFloat(document.getElementById(p+'-sh-amt').value);
+  const cat=document.getElementById(p+'-sh-cat').value;
+  const fund=document.getElementById(p+'-sh-fund').value;
+  const type=document.getElementById(p+'-sh-type').value;
+  if(!name||!amt||amt<=0)return;
+  if(!D.shop)D.shop=[];
+  D.shop.unshift({name,amount:amt,month,cat,type,fund,id:Date.now()});
+  if(fund==='mandiri'){
+    if(!D.mandiriSpent)D.mandiriSpent={};if(!D.mandiriLog)D.mandiriLog={};
+    D.mandiriSpent[month]=(D.mandiriSpent[month]||0)+amt;
+    if(!D.mandiriLog[month])D.mandiriLog[month]=[];
+    D.mandiriLog[month].push({amount:amt,shopId:D.shop[0].id});
+  }
+  save();
+  document.getElementById(p+'-sh-name').value='';
+  document.getElementById(p+'-sh-amt').value='';
+  renderShopInline(month);
+  updateSum(month);
+  renderAllocate();
+  renderMonthSummary(month);
+  renderAnnualSummary();
+}
+
+function renderShopInline(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const listEl=document.getElementById(p+'-sh-list');
+  const totEl=document.getElementById(p+'-exp-total');
+  const summaryEl=document.getElementById(p+'-sh-summary');
+  const summaryText=document.getElementById(p+'-sh-summary-text');
+  if(!listEl)return;
+  const entries=(D.shop||[]).filter(e=>e.month===month);
+  let total=0;entries.forEach(e=>total+=e.amount);
+  if(totEl)totEl.textContent=entries.length>0?fmt(total):'';
+  if(entries.length===0){
+    listEl.innerHTML='';listEl.style.display='none';
+    if(summaryEl)summaryEl.style.display='none';
+    return;
+  }
+  // warning signals
+  const debtAmt=entries.filter(e=>e.fund==='shopee'||e.fund==='gopay').reduce((a,e)=>a+e.amount,0);
+  const wantAmt=entries.filter(e=>e.type==='want').reduce((a,e)=>a+e.amount,0);
+  const wantPct=total>0?Math.round((wantAmt/total)*100):0;
+  const debtPct=total>0?Math.round((debtAmt/total)*100):0;
+  const hasHighDebt=debtPct>=40;
+  const hasHighWant=wantPct>=70;
+  const debtCount=entries.filter(e=>e.fund==='shopee'||e.fund==='gopay').length;
+
+  if(summaryEl){
+    summaryEl.style.display='block';
+    let warnings='';
+    if(hasHighDebt) warnings+=` <span style="background:var(--danger);color:white;font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;">⚠ ${debtPct}% PayLater</span>`;
+    if(hasHighWant) warnings+=` <span style="background:var(--warning);color:white;font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;">⚠ ${wantPct}% wants</span>`;
+    if(summaryText)summaryText.innerHTML=`${entries.length} purchase${entries.length>1?'s':''} · ${fmt(total)}${debtCount>0?' · '+debtCount+' on PayLater':''}${warnings}`;
+  }
+  if(listEl.style.display==='none')return;
+  listEl.innerHTML=entries.map(e=>{
+    const fk=e.fund||'mandiri';
+    const isPayLater=fk==='shopee'||fk==='gopay';
+    const rowWarning=isPayLater&&e.amount>500000?` <span style="font-size:10px;color:var(--danger);">⚠</span>`:'';
+    return`<div class="sle" style="${isPayLater?'border-left:2px solid var(--danger);padding-left:8px;':''}">
+      <div class="sle-left">
+        <div class="sle-name">${e.name}${rowWarning}</div>
+        <div class="sle-meta">${CATS[e.cat]||e.cat} · <span style="color:${FUND_COLORS[fk]};font-weight:500;">${FUNDS[fk]}</span></div>
+      </div>
+      <div class="sle-right">
+        <div class="sle-amt" style="${isPayLater?'color:var(--danger);':''}">${fmt(e.amount)}</div>
+        <div class="sle-type ${e.type}">${e.type==='need'?'Need':'Want'}</div>
+      </div>
+      <button onclick="delShop(${e.id})" style="background:none;border:none;color:var(--text-hint);cursor:pointer;font-size:16px;padding:0 4px;margin-left:3px;">×</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleExpList(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const listEl=document.getElementById(p+'-sh-list');
+  const summaryEl=document.getElementById(p+'-sh-summary');
+  if(!listEl)return;
+  const isOpen=listEl.style.display!=='none';
+  if(isOpen){
+    listEl.style.display='none';
+    const span=summaryEl&&summaryEl.querySelector('span:last-child');
+    if(span)span.textContent='tap to view ↓';
+  } else {
+    listEl.style.display='block';
+    const span=summaryEl&&summaryEl.querySelector('span:last-child');
+    if(span)span.textContent='tap to hide ↑';
+    renderShopInline(month);
+  }
+}
+function addShop(){} // panel removed — use inline month sections instead
+function delShop(id){
+  const entry=(D.shop||[]).find(e=>e.id===id);
+  if(entry&&entry.fund==='mandiri'){
+    D.mandiriSpent[entry.month]=Math.max(0,(D.mandiriSpent[entry.month]||0)-entry.amount);
+    if(D.mandiriLog&&D.mandiriLog[entry.month]){
+      const idx=D.mandiriLog[entry.month].findIndex(l=>l.shopId===id);
+      if(idx>-1)D.mandiriLog[entry.month].splice(idx,1);
+    }
+  }
+  const month=entry?entry.month:null;
+  D.shop=(D.shop||[]).filter(e=>e.id!==id);save();
+  if(month){renderShopInline(month);updateSum(month);}
+  renderAnnualSummary();renderAllocate();
+}
+// renderShop removed — expenditure lives in each month tab
+function filterShop(f,el){}
+
+function renderDebt(){
+  const se=document.getElementById('shopee-list'),ge=document.getElementById('gopay-list'),ce=document.getElementById('cc-list');if(!se)return;
+  let st=0,gt=0,ct=0;
+
+  // Shopee — show all, dim paid ones
+  se.innerHTML='';
+  const today=new Date();
+  D.debts.shopee.forEach((d,i)=>{
+    const isPaid=D.paid['shopee-debt-'+i];
+    if(!isPaid)st+=d.amount;
+    const r=document.createElement('div');r.className='debt-row';
+    r.style.opacity=isPaid?'0.4':'1';
+    r.innerHTML=`<span class="dplat" style="${isPaid?'text-decoration:line-through;':''}">${d.due}</span>
+      <span style="display:flex;align-items:center;gap:8px;">
+        <span class="damt" onclick="editDebt('shopee',${i})" style="${isPaid?'text-decoration:line-through;':''}">${fmt(d.amount)}</span>
+        <button onclick="toggleDebtPaid('shopee-debt-${i}')" style="font-size:11px;padding:2px 7px;border-radius:10px;border:1px solid ${isPaid?'var(--success)':'var(--border)'};background:${isPaid?'var(--success-light)':'none'};color:${isPaid?'var(--success)':'var(--text-hint)'};cursor:pointer;">${isPaid?'✓ Paid':'Mark paid'}</button>
+      </span>`;
+    se.appendChild(r);
+  });
+  document.getElementById('shopee-badge').textContent=fmt(st)+' remaining';
+
+  // GoPay — same
+  ge.innerHTML='';
+  D.debts.gopay.forEach((d,i)=>{
+    const isPaid=D.paid['gopay-debt-'+i];
+    if(!isPaid)gt+=d.amount;
+    const r=document.createElement('div');r.className='debt-row';
+    r.style.opacity=isPaid?'0.4':'1';
+    r.innerHTML=`<span class="dplat" style="${isPaid?'text-decoration:line-through;':''}">${d.due}</span>
+      <span style="display:flex;align-items:center;gap:8px;">
+        <span class="damt" onclick="editDebt('gopay',${i})" style="${isPaid?'text-decoration:line-through;':''}">${fmt(d.amount)}</span>
+        <button onclick="toggleDebtPaid('gopay-debt-${i}')" style="font-size:11px;padding:2px 7px;border-radius:10px;border:1px solid ${isPaid?'var(--success)':'var(--border)'};background:${isPaid?'var(--success-light)':'none'};color:${isPaid?'var(--success)':'var(--text-hint)'};cursor:pointer;">${isPaid?'✓ Paid':'Mark paid'}</button>
+      </span>`;
+    ge.appendChild(r);
+  });
+  document.getElementById('gopay-badge').textContent=fmt(gt)+' remaining';
+
+  // CC installments with progress
+  const CC_SCHEDULE=[
+    {label:'Phuket ticket',total:6,started:'Jan 2026'},
+    {label:'Laser removal',total:9,started:'Feb 2026'},
+    {label:'Laser whitening',total:9,started:'Feb 2026'}
+  ];
+  ce.innerHTML='';
+  D.debts.cc.forEach((d,i)=>{
+    ct+=d.amount;
+    const sched=CC_SCHEDULE[i]||{total:6,started:'—'};
+    const paidCount=D.ccInstPaid&&D.ccInstPaid[i]!=null?D.ccInstPaid[i]:0;
+    const remaining=sched.total-paidCount;
+    const amountLeft=d.amount*remaining;
+    const pct=Math.round((paidCount/sched.total)*100);
+    const r=document.createElement('div');
+    r.style.cssText='padding:10px 0;border-bottom:1px solid var(--border);';
+    r.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+        <span class="dplat" style="font-weight:500;">${d.label}</span>
+        <span class="damt" onclick="editDebt('cc',${i})" style="font-size:13px;">${fmt(d.amount)}/mo</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:5px;">
+        ${paidCount} of ${sched.total} payments made · ${remaining} remaining
+      </div>
+      <div style="background:var(--surface2);border-radius:4px;height:5px;overflow:hidden;margin-bottom:5px;">
+        <div style="height:100%;border-radius:4px;background:${pct>=100?'var(--success)':'var(--accent)'};width:${pct}%;transition:width .4s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--danger);font-weight:500;">Still owe: ${fmt(amountLeft)}</span>
+        <div style="display:flex;gap:5px;">
+          <button onclick="adjustInstPaid('${i}',-1)" style="width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;color:var(--text-muted);">−</button>
+          <button onclick="adjustInstPaid('${i}',1)" style="padding:3px 10px;border-radius:10px;border:1px solid var(--accent);background:var(--accent-light);color:var(--accent-dark);cursor:pointer;font-size:11px;font-weight:500;">+ Payment made</button>
+        </div>
+      </div>`;
+    ce.appendChild(r);
+  });
+  const ccTotalOwed=D.debts.cc.reduce((a,d,i)=>{
+    const totalMo=[6,9,9][i]||6;
+    const paid=D.ccInstPaid&&D.ccInstPaid[i]!=null?D.ccInstPaid[i]:0;
+    return a+d.amount*Math.max(0,totalMo-paid);
+  },0);
+  const ccTotalRow=document.createElement('div');
+  ccTotalRow.style.cssText='display:flex;justify-content:space-between;padding:9px 0 2px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);margin-top:4px;';
+  ccTotalRow.innerHTML=`<span>Total still owed to bank</span><span style="font-weight:600;color:var(--danger);">${fmt(ccTotalOwed)}</span>`;
+  ce.appendChild(ccTotalRow);
+  document.getElementById('cc-badge').textContent=fmt(ccTotalOwed)+' owed';
+  document.getElementById('grand-debt').textContent='~'+fmt(st+gt+ccTotalOwed);
+}
+function adjustInstPaid(idx,delta){
+  if(!D.ccInstPaid)D.ccInstPaid={};
+  const sched=[6,9,9];
+  const cur=D.ccInstPaid[idx]||0;
+  const newVal=Math.max(0,Math.min(sched[idx],cur+delta));
+  D.ccInstPaid[idx]=newVal;
+  save();renderDebt();
+}
+function toggleDebtPaid(key){
+  D.paid[key]=!D.paid[key];
+  const DEBT_TO_BILL={
+    'shopee-debt-0':['mar-shopee','apr-shopee'],
+    'shopee-debt-1':['may-shopee'],
+    'shopee-debt-2':['jun-shopee'],
+    'gopay-debt-0':['mar-gopay','apr-gopay'],
+    'gopay-debt-1':['may-gopay']
+  };
+  const billKeys=DEBT_TO_BILL[key]||[];
+  billKeys.forEach(bk=>{D.paid[bk]=D.paid[key];});
+  save();renderDebt();
+  ['march','april','may','june'].forEach(month=>{
+    const panel=document.getElementById('panel-'+month);
+    if(panel&&panel.classList.contains('active')){
+      const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+      const b=getBills()[month];renderBills(b,p+'-bills',p+'-bills-tot',month);updateSum(month);
+    }
+  });
+}
+function editDebt(type,idx){
+  const item=D.debts[type][idx];const nv=prompt('Update: '+(type==='cc'?item.label:item.due),item.amount);if(nv===null)return;
+  const p=parseFloat(nv.replace(/[^0-9.]/g,''));if(isNaN(p)||p<0)return alert('Invalid amount.');
+  D.debts[type][idx].amount=p;save();renderDebt();
+  const b=getBills();renderBills(b.april,'apr-bills','apr-bills-tot','april');renderBills(b.may,'may-bills','may-bills-tot','may');renderBills(b.june,'jun-bills','jun-bills-tot','june');
+  ['april','may','june'].forEach(m=>updateSum(m));
+}
+function renderCCActual(){
+  const el=document.getElementById('cc-actual-list');if(!el)return;
+  const cc=D.debts.cc.reduce((a,c)=>a+c.amount,0);
+  const months=[
+    {key:'april',label:'April',default:3959444},
+    {key:'may',label:'May',default:cc+CC_SUBS},
+    {key:'june',label:'June',default:cc+CC_SUBS}
+  ];
+  el.innerHTML=months.map(m=>{
+    const actual=D.ccActual[m.key]!=null?D.ccActual[m.key]:m.default;
+    const ownSpend=actual-cc-CC_SUBS;
+    const ownLabel=ownSpend>=0?fmt(ownSpend):'−'+fmt(Math.abs(ownSpend));
+    const ownColor=ownSpend>2000000?'var(--danger)':ownSpend>1000000?'var(--warning)':'var(--success)';
+    return`<div style="padding:12px 0;border-bottom:1px solid #E8C9A5;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:14px;font-weight:600;color:var(--accent-dark);">${m.label}</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text-muted);">Total bill:</span>
+          <span style="font-size:14px;font-weight:600;color:var(--accent-dark);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;" onclick="editCCActual('${m.key}')">${fmt(actual)}</span>
+        </span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-left:3px solid var(--warning);padding-left:8px;margin-bottom:3px;">
+        <span style="color:var(--text-muted);">Installments</span>
+        <span style="color:var(--warning);font-weight:500;">${fmt(cc)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-left:3px solid var(--purple);padding-left:8px;margin-bottom:3px;">
+        <span style="color:var(--text-muted);">Subscriptions <span style="opacity:.6;">(iCloud + Microsoft)</span></span>
+        <span style="color:var(--purple);font-weight:500;">${fmt(CC_SUBS)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 8px;background:rgba(0,0,0,.03);border-radius:var(--radius-sm);margin-top:4px;">
+        <span style="color:var(--text);font-weight:500;">Your own spending</span>
+        <span style="font-weight:700;color:${ownColor};">${ownLabel}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function editCCActual(month){
+  const cc=D.debts.cc.reduce((a,c)=>a+c.amount,0);
+  const current=D.ccActual[month]!=null?D.ccActual[month]:(month==='april'?3959444:cc);
+  const nv=prompt('Enter actual CC bill for '+month.charAt(0).toUpperCase()+month.slice(1)+' (Rp):',current);
+  if(nv===null)return;
+  const p=parseFloat(nv.replace(/[^0-9.]/g,''));if(isNaN(p)||p<0)return alert('Invalid amount.');
+  D.ccActual[month]=p;save();renderCCActual();
+  const b=getBills();renderBills(b.april,'apr-bills','apr-bills-tot','april');renderBills(b.may,'may-bills','may-bills-tot','may');renderBills(b.june,'jun-bills','jun-bills-tot','june');
+  ['april','may','june'].forEach(m=>updateSum(m));
+}
+
+function renderMonthSummary(month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const el=document.getElementById(p+'-summary-body');if(!el)return;
+  const sh=(D.shop||[]).filter(e=>e.month===month);
+  const extra=D.extra[month]||0;
+  const extraTrips=(D.extraList&&D.extraList[month])||[];
+  const totalIncome=SAL+extra;
+  const bills=getBills()[month];
+  let totalBills=0;bills.forEach(b=>totalBills+=b.amount);
+  const rem=totalIncome-totalBills;
+  const cc=D.debts.cc.reduce((a,x)=>a+x.amount,0);
+  const totalSpent=sh.reduce((a,e)=>a+e.amount,0);
+  const wantSpent=sh.filter(e=>e.type==='want').reduce((a,e)=>a+e.amount,0);
+  const needSpent=sh.filter(e=>e.type==='need').reduce((a,e)=>a+e.amount,0);
+  const debtSpent=sh.filter(e=>e.fund==='shopee'||e.fund==='gopay').reduce((a,e)=>a+e.amount,0);
+  const shopeeRem=D.debts.shopee.reduce((a,d,i)=>a+(D.paid['shopee-debt-'+i]?0:d.amount),0);
+  const gopayRem=D.debts.gopay.reduce((a,d,i)=>a+(D.paid['gopay-debt-'+i]?0:d.amount),0);
+  const totalDebtRem=shopeeRem+gopayRem;
+  const mon=month.charAt(0).toUpperCase()+month.slice(1);
+
+  if(sh.length===0&&extra===0){
+    el.textContent='Log your expenditure and income to see your honest summary here.';
+    return;
+  }
+
+  const parts=[];
+  const wantPct=totalSpent>0?Math.round((wantSpent/totalSpent)*100):0;
+  const debtPct=totalSpent>0?Math.round((debtSpent/totalSpent)*100):0;
+  const savedThisMonth=rem>0?rem:0;
+  const wasted=rem<0?Math.abs(rem):0;
+
+  // ── EXTRA INCOME TRUTH ────────────────────────────────
+  if(extra>0){
+    const tripWord=extraTrips.length>1?`${extraTrips.length} trips`:'a trip';
+    if(savedThisMonth<extra*0.1){
+      parts.push(`${mon}, you brought in ${fmt(extra)} from ${tripWord} — on top of your salary. That's ${fmt(totalIncome)} total. And yet, looking at what's left, almost none of that extra income survived. Business trips are not guaranteed income, Bella. Your boss assigns them. You don't get to decide when the next one comes. Spending windfall money like it's a salary raise is exactly how people stay broke even when they earn well.`);
+    } else if(savedThisMonth>extra*0.3){
+      parts.push(`${mon}, you earned ${fmt(extra)} from ${tripWord} and actually kept some of it. That's the right instinct. Business trips aren't permanent — treat every one as a bonus, not a baseline.`);
+    } else {
+      parts.push(`${mon}: ${fmt(extra)} in extra income from ${tripWord}. Some of it survived, some didn't. Remember — your boss decides who goes on trips. This income is a gift, not a given. Save more of it next time.`);
+    }
+  }
+
+  // ── SPENDING TRUTH ────────────────────────────────────
+  if(totalSpent>0){
+    if(wantPct>70&&debtSpent>0){
+      parts.push(`${wantPct}% of your logged spending was on wants — and you used PayLater to fund some of it. Let that sink in. You borrowed money to buy things you wanted but didn't need, while already carrying ${fmt(totalDebtRem)} in existing debt. That's not treating yourself. That's stealing from your future self.`);
+    } else if(wantPct>70){
+      parts.push(`${wantPct}% wants. Out of every Rp 10 you spent this month, Rp ${Math.round(wantPct/10)} went to desires. You clearly know how to enjoy money — now learn when not to.`);
+    } else if(wantPct>50&&debtSpent>0){
+      parts.push(`More than half your spending was on wants, and ${fmt(debtSpent)} of it went on PayLater. You're not in a position to be generous with yourself right now. The shopping can wait. The debt cannot.`);
+    } else if(debtPct>40){
+      parts.push(`${debtPct}% of your spending went on PayLater this month. That's almost half your purchases funded by debt you're already struggling to clear. Every swipe on Shopee now is a bill arriving in a future month when you'll already be tight.`);
+    } else if(wantPct<30&&debtPct<15){
+      parts.push(`${wantPct}% wants, ${debtPct}% PayLater. This is what a disciplined month looks like. Hold this standard.`);
+    } else {
+      parts.push(`${wantPct}% of spending on wants, ${debtPct}% on PayLater. Not a disaster — but not something to be comfortable with either.`);
+    }
+  }
+
+  // ── NEW DEBT WARNING ──────────────────────────────────
+  if(debtSpent>0){
+    parts.push(`You added ${fmt(debtSpent)} in new PayLater spending. If you also paid a bill this month, you didn't reduce your debt — you refilled it. That's a treadmill. You're running and going nowhere.`);
+  }
+
+  // ── SAVINGS TRUTH ─────────────────────────────────────
+  if(wasted>0){
+    parts.push(`You spent ${fmt(wasted)} more than your income could cover. That gap had to come from somewhere — and wherever it came from, it's gone.`);
+  } else if(savedThisMonth>0&&savedThisMonth<500000){
+    parts.push(`Only ${fmt(savedThisMonth)} left after all obligations. That's not a buffer — that's barely rounding error. One unexpected expense and you're in the red.`);
+  } else if(savedThisMonth>3000000){
+    parts.push(`You had ${fmt(savedThisMonth)} left after bills. If that didn't go to BRI, ask yourself where it actually went.`);
+  }
+
+  // ── DEBT CONTEXT ─────────────────────────────────────
+  if(totalDebtRem>10000000){
+    parts.push(`You still carry ${fmt(totalDebtRem)} in PayLater. That's not a small number. Every unnecessary purchase this month is a reason September takes longer.`);
+  } else if(totalDebtRem>0&&totalDebtRem<5000000){
+    parts.push(`${fmt(totalDebtRem)} left in PayLater — you're close to the end. Don't blow it now.`);
+  }
+
+  // ── INSIGHT CARDS ─────────────────────────────────────
+  const ins=[];
+  if(extra>0){const tw=extraTrips.length>1?extraTrips.length+' trips':'a trip';ins.push({ico:'✈',col:'g',title:mon+': Extra income',body:fmt(extra)+' from '+tw+' on top of salary. Total income: '+fmt(totalIncome)+'.'});}
+  const ccActualAmt=D.ccActual&&D.ccActual[month]!=null?D.ccActual[month]:null;
+  if(ccActualAmt!=null){const ownSp=ccActualAmt-cc-CC_SUBS;ins.push({ico:'💳',col:ownSp>2000000?'r':ownSp>1000000?'a':'g',title:'CC personal spend · '+mon,body:'Total bill: '+fmt(ccActualAmt)+'. Installments: '+fmt(cc)+' · Subscriptions: '+fmt(CC_SUBS)+' · Your own spending: '+fmt(Math.max(0,ownSp))+'.'});}
+  if(totalSpent>0){const dbt=sh.filter(e=>e.fund==='shopee'||e.fund==='gopay').reduce((a,e)=>a+e.amount,0);const own=totalSpent-dbt;const plp=Math.round((dbt/totalSpent)*100);ins.push({ico:'⚖️',col:plp>50?'r':plp>20?'a':'g',title:'Spending: '+(100-plp)+'% own money, '+plp+'% PayLater',body:'Own: '+fmt(own)+' · PayLater: '+fmt(dbt)+'.'});}
+  if(sh.length>0){const top=sh.reduce((a,e)=>e.amount>a.amount?e:a,sh[0]);const fk=top.fund||'mandiri';ins.push({ico:'🛒',col:top.amount>1000000?'r':top.amount>500000?'a':'g',title:'Biggest purchase: '+fmt(top.amount),body:'"'+top.name+'" ('+(CATS[top.cat]||top.cat)+', '+(FUNDS[fk]||fk)+').'+(top.amount>1000000?' Was it planned?':'')});}
+  const topup=D.grab[month]||0;
+  if(topup>0)ins.push({ico:'🛵',col:'a',title:'GoPay/OVO top-up · '+mon,body:'Topped up '+fmt(topup)+' for food & transport.'});
+
+
+  // ── CATEGORY BREAKDOWN ───────────────────────────────
+  const catTotals={};
+  sh.forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;});
+  const catEntries=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  let catHTML='';
+  if(catEntries.length>0){
+    const topCat=catEntries[0];
+    const topPct=totalSpent>0?Math.round((topCat[1]/totalSpent)*100):0;
+    catHTML='<div style="margin-bottom:10px;"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.4);font-weight:600;margin-bottom:7px;">Where your money went</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">'+catEntries.map(([cat,amt])=>{const pct=totalSpent>0?Math.round((amt/totalSpent)*100):0;const isTop=cat===topCat[0];return'<div style="background:rgba(255,255,255,'+(isTop?'0.15':'0.07')+');border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:5px;"><span style="font-size:11px;color:'+(CCOLS[cat]||'rgba(255,255,255,0.6)')+';font-weight:600;">'+(CATS[cat]||cat)+'</span><span style="font-size:11px;color:rgba(255,255,255,0.5);">'+fmt(amt)+'</span>'+(isTop?'<span style="font-size:10px;background:var(--danger);color:white;padding:1px 5px;border-radius:8px;font-weight:600;">#1 · '+pct+'%</span>':'')+'</div>';}).join('')+'</div><div style="font-size:12px;color:rgba(255,255,255,0.5);">Most spent on <span style="color:'+(CCOLS[topCat[0]]||'white')+';font-weight:600;">'+(CATS[topCat[0]]||topCat[0])+'</span> — '+fmt(topCat[1])+' ('+topPct+'% of spending this month).</div></div>';
+  }
+
+  const insHTML=ins.map(i=>'<div class="insight" style="background:rgba(255,255,255,0.06);border:none;margin-bottom:8px;padding:10px 12px;border-radius:var(--radius-sm);"><div class="iico '+i.col+'" style="flex-shrink:0;">'+i.ico+'</div><div style="min-width:0;"><div style="font-size:12px;font-weight:600;color:white;margin-bottom:2px;">'+i.title+'</div><div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.5;">'+i.body+'</div></div></div>').join('');
+  const brutalHTML=parts.length>0?`<div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:10px;padding-top:10px;"><div style="font-family:'DM Serif Display',serif;font-size:14px;color:white;margin-bottom:6px;">The honest truth</div><div style="font-size:12px;color:rgba(255,255,255,0.7);line-height:1.8;">${parts.join(' ')}</div></div>`:'';
+  el.innerHTML=catHTML+insHTML+brutalHTML;
+}
+
+function renderAnnualSummary(){
+  const el=document.getElementById('annual-body');if(!el)return;
+  const ALL=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const LABELS={january:'January',february:'February',march:'March',april:'April',may:'May',june:'June',july:'July',august:'August',september:'September',october:'October',november:'November',december:'December'};
+  const SHORT={january:'Jan',february:'Feb',march:'Mar',april:'Apr',may:'May',june:'Jun',july:'Jul',august:'Aug',september:'Sep',october:'Oct',november:'Nov',december:'Dec'};
+  const sh=D.shop||[];
+  const cc=D.debts.cc.reduce((a,x)=>a+x.amount,0);
+
+  const monthData=ALL.map(m=>{
+    const extra=D.extra[m]||0;
+    const income=SAL+extra;
+    const bills=getBills()[m]||[];
+    let committed=0;bills.forEach(b=>committed+=b.amount);
+    const entries=sh.filter(e=>e.month===m);
+    const spent=entries.reduce((a,e)=>a+e.amount,0);
+    const plSpent=entries.filter(e=>e.fund==='shopee'||e.fund==='gopay').reduce((a,e)=>a+e.amount,0);
+    const ccSpent=entries.filter(e=>e.fund==='cc').reduce((a,e)=>a+e.amount,0);
+    const wantSpent=entries.filter(e=>e.type==='want').reduce((a,e)=>a+e.amount,0);
+    const needSpent=entries.filter(e=>e.type==='need').reduce((a,e)=>a+e.amount,0);
+    const emgSaved=(D.savings&&D.savings.emg&&D.savings.emg[m])?D.savings.emg[m].total:0;
+    const bdaySaved=(D.savings&&D.savings.bday&&D.savings.bday[m])?D.savings.bday[m].total:0;
+    const topup=D.grab[m]||0;
+    const hasData=extra>0||spent>0||committed>0;
+    const catTotals={};entries.forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;});
+    const topCat=Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+    return{m,label:LABELS[m],short:SHORT[m],income,committed,spent,plSpent,ccSpent,wantSpent,needSpent,emgSaved,bdaySaved,topup,hasData,rem:income-committed,topCat,catTotals};
+  });
+
+  const activeMonths=monthData.filter(d=>d.hasData);
+  if(activeMonths.length===0){
+    el.innerHTML='<div class="empty" style="padding:40px 0;text-align:center;">Start logging your monthly data — your 2026 recap will build here automatically as the year unfolds.</div>';
+    return;
+  }
+
+  // ── COMPUTED TOTALS ───────────────────────────────────
+  const totalIncome=activeMonths.reduce((a,d)=>a+d.income,0);
+  const totalSalary=activeMonths.length*SAL;
+  const totalExtra=totalIncome-totalSalary;
+  const totalSpent=activeMonths.reduce((a,d)=>a+d.spent,0);
+  const totalPL=activeMonths.reduce((a,d)=>a+d.plSpent,0);
+  const totalCC=activeMonths.reduce((a,d)=>a+d.ccSpent,0);
+  const totalWant=activeMonths.reduce((a,d)=>a+d.wantSpent,0);
+  const totalNeed=activeMonths.reduce((a,d)=>a+d.needSpent,0);
+  const totalTopup=activeMonths.reduce((a,d)=>a+d.topup,0);
+  const totalEmg=ALL.reduce((a,m)=>a+((D.savings&&D.savings.emg&&D.savings.emg[m])?D.savings.emg[m].total:0),0);
+  const totalBday=ALL.reduce((a,m)=>a+((D.savings&&D.savings.bday&&D.savings.bday[m])?D.savings.bday[m].total:0),0);
+  const wantPct=totalSpent>0?Math.round((totalWant/totalSpent)*100):0;
+  const plPct=totalSpent>0?Math.round((totalPL/totalSpent)*100):0;
+  const shopeeTotal=D.debts.shopee.reduce((a,d)=>a+d.amount,0);
+  const shopeeRem=D.debts.shopee.reduce((a,d,i)=>a+(D.paid['shopee-debt-'+i]?0:d.amount),0);
+  const debtCleared=shopeeTotal-shopeeRem;
+  const debtPct=shopeeTotal>0?Math.round((debtCleared/shopeeTotal)*100):0;
+  const ccInstPaidAmt=D.debts.cc.reduce((a,d,i)=>{const paid=D.ccInstPaid&&D.ccInstPaid[i]!=null?D.ccInstPaid[i]:0;return a+d.amount*paid;},0);
+  const maxSpent=Math.max(...ALL.map(m=>monthData.find(d=>d.m===m).spent),1);
+  const maxIncome=Math.max(...activeMonths.map(d=>d.income),1);
+
+  // Best and worst months
+  const spentMonths=activeMonths.filter(d=>d.spent>0);
+  const bestMonth=spentMonths.length>0?spentMonths.reduce((a,d)=>d.wantPct<a.wantPct?d:a,{...spentMonths[0],wantPct:spentMonths[0].wantSpent/Math.max(spentMonths[0].spent,1)}):null;
+  const worstMonth=spentMonths.length>0?spentMonths.reduce((a,d)=>(d.plSpent+d.wantSpent)>(a.plSpent+a.wantSpent)?d:a,spentMonths[0]):null;
+  const highestIncomeMonth=activeMonths.reduce((a,d)=>d.income>a.income?d:a,activeMonths[0]);
+  const biggestPurchase=sh.length>0?sh.reduce((a,e)=>e.amount>a.amount?e:a,sh[0]):null;
+
+  // Cat totals
+  const catTotals={};
+  sh.forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;});
+  const catEntries=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+
+  // Missed savings (extra income not saved)
+  const extraMonths=activeMonths.filter(d=>d.income>SAL);
+  const missedSavings=extraMonths.reduce((a,d)=>{
+    const extraAmt=d.income-SAL;
+    const saved=d.emgSaved+d.bdaySaved;
+    return a+Math.max(0,extraAmt-saved-d.spent);
+  },0);
+
+  // ── SECTION HELPER ────────────────────────────────────
+  const section=(title,html)=>`
+    <div style="margin-bottom:20px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:var(--text-muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);">${title}</div>
+      ${html}
+    </div>`;
+
+  // ── 1. YEAR AT A GLANCE ───────────────────────────────
+  const glanceHTML=section('Year at a Glance',`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Total income</div>
+        <div style="font-size:20px;font-weight:700;color:var(--success);">${fmtS(totalIncome)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${activeMonths.length} months tracked</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Personal spending</div>
+        <div style="font-size:20px;font-weight:700;color:var(--danger);">${fmtS(totalSpent)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${totalSpent>0?Math.round((totalSpent/totalIncome)*100):0}% of income</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Business trip income</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent);">${fmtS(totalExtra)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">on top of salary</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Total PayLater spent</div>
+        <div style="font-size:20px;font-weight:700;color:var(--purple);">${fmtS(totalPL)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">${plPct}% of all spending</div>
+      </div>
+    </div>`);
+
+  // ── 2. MONTHLY INCOME vs SPENDING BARS ───────────────
+  const barsHTML=section('Month by Month — Income vs Spending',
+    ALL.map(m=>{
+      const d=monthData.find(x=>x.m===m);
+      if(!d.hasData)return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;opacity:.3;">
+        <div style="width:28px;font-size:10px;color:var(--text-muted);font-weight:600;">${d.short}</div>
+        <div style="flex:1;height:16px;background:var(--surface2);border-radius:3px;"></div>
+        <div style="width:50px;font-size:10px;color:var(--text-hint);text-align:right;">—</div>
+      </div>`;
+      const incPct=Math.round((d.income/maxIncome)*100);
+      const spPct=d.spent>0?Math.round((d.spent/maxIncome)*100):0;
+      const plPct2=d.plSpent>0?Math.round((d.plSpent/maxIncome)*100):0;
+      return`<div style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:28px;font-size:10px;color:var(--text);font-weight:600;">${d.short}</div>
+          <div style="flex:1;position:relative;height:18px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;height:100%;background:rgba(79,187,155,.18);width:${incPct}%;"></div>
+            <div style="position:absolute;left:0;top:0;height:100%;background:var(--danger);opacity:.65;width:${spPct}%;"></div>
+            ${plPct2>0?`<div style="position:absolute;left:0;top:0;height:100%;background:var(--purple);opacity:.8;width:${plPct2}%;"></div>`:''}
+          </div>
+          <div style="width:60px;font-size:10px;color:var(--text-muted);text-align:right;">${d.spent>0?fmtS(d.spent):'—'}</div>
+        </div>
+        ${d.income>SAL?`<div style="font-size:10px;color:var(--success);margin-left:36px;margin-top:1px;">+${fmtS(d.income-SAL)} extra</div>`:''}
+      </div>`;
+    }).join('')+`
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text-muted);">
+      <span><span style="display:inline-block;width:8px;height:8px;background:rgba(79,187,155,.35);border-radius:2px;margin-right:3px;"></span>Income</span>
+      <span><span style="display:inline-block;width:8px;height:8px;background:var(--danger);opacity:.65;border-radius:2px;margin-right:3px;"></span>Spending</span>
+      <span><span style="display:inline-block;width:8px;height:8px;background:var(--purple);border-radius:2px;margin-right:3px;"></span>PayLater portion</span>
+    </div>`);
+
+  // ── 3. DEBT PAYOFF TIMELINE ───────────────────────────
+  const shopeeSchedule=[
+    {m:'March',amt:5754860},{m:'April',amt:5754860},{m:'May',amt:3653298},
+    {m:'June',amt:2771975},{m:'July',amt:2334762},{m:'August',amt:2174718},{m:'September',amt:1128470}
+  ];
+  let runningDebt=shopeeTotal;
+  const debtTimelineHTML=section('PayLater Debt Payoff Journey',`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--text-muted);">Started 2026 with</span>
+        <span style="font-size:13px;font-weight:600;color:var(--danger);">${fmt(shopeeTotal)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:12px;color:var(--text-muted);">Cleared so far</span>
+        <span style="font-size:13px;font-weight:600;color:var(--success);">${fmt(debtCleared)} (${debtPct}%)</span>
+      </div>
+      <div style="background:var(--surface);border-radius:4px;height:10px;overflow:hidden;margin-bottom:6px;">
+        <div style="height:100%;background:var(--success);border-radius:4px;width:${debtPct}%;transition:width .5s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-hint);">
+        <span>0%</span><span style="color:var(--success);font-weight:600;">September 2026 = 100% ✓</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      ${shopeeSchedule.map(s=>{
+        const isPaid=debtCleared>=runningDebt;
+        const html=`<div style="font-size:10px;padding:4px 8px;border-radius:10px;background:${isPaid?'var(--success-light)':'var(--surface2)'};color:${isPaid?'var(--success)':'var(--text-muted)'};border:1px solid ${isPaid?'var(--success)':'var(--border)'};">${s.m}: ${fmtS(s.amt)} ${isPaid?'✓':''}</div>`;
+        runningDebt-=s.amt;
+        return html;
+      }).join('')}
+    </div>`);
+
+  // ── 4. SPENDING BREAKDOWN ─────────────────────────────
+  const spendBreakHTML=section('How You Spent — The Full Picture',`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div style="background:var(--success-light);border:1px solid var(--success);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--success);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Needs</div>
+        <div style="font-size:18px;font-weight:700;color:var(--success);">${fmtS(totalNeed)}</div>
+        <div style="font-size:11px;color:var(--success);opacity:.7;">${totalSpent>0?Math.round((totalNeed/totalSpent)*100):0}% of spending</div>
+      </div>
+      <div style="background:var(--danger-light);border:1px solid var(--danger);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--danger);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Wants</div>
+        <div style="font-size:18px;font-weight:700;color:var(--danger);">${fmtS(totalWant)}</div>
+        <div style="font-size:11px;color:var(--danger);opacity:.7;">${wantPct}% of spending</div>
+      </div>
+      <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.3);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--purple);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">On PayLater</div>
+        <div style="font-size:18px;font-weight:700;color:var(--purple);">${fmtS(totalPL)}</div>
+        <div style="font-size:11px;color:var(--purple);opacity:.7;">${plPct}% of spending</div>
+      </div>
+      <div style="background:var(--warning-light);border:1px solid var(--warning);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;color:var(--warning);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">GoPay/OVO</div>
+        <div style="font-size:18px;font-weight:700;color:var(--warning);">${fmtS(totalTopup)}</div>
+        <div style="font-size:11px;color:var(--warning);opacity:.7;">food & transport</div>
+      </div>
+    </div>`);
+
+  // ── 5. CATEGORIES ─────────────────────────────────────
+  const catHTML2=catEntries.length>0?section('Spending by Category — Full Year 2026',
+    catEntries.map(([cat,amt],i)=>{
+      const pct=totalSpent>0?Math.round((amt/totalSpent)*100):0;
+      const isTop=i===0;
+      return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:${CCOLS[cat]||'var(--text-hint)'};display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:700;flex-shrink:0;">${i+1}</div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+            <span style="font-weight:${isTop?700:500};color:${isTop?'var(--text)':'var(--text-muted)'};">${CATS[cat]||cat}${isTop?' 👑':''}</span>
+            <span style="font-weight:600;color:${CCOLS[cat]||'var(--text-muted)'};">${fmt(amt)}</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:3px;height:5px;overflow:hidden;">
+            <div style="height:100%;background:${CCOLS[cat]||'var(--text-hint)'};width:${pct}%;border-radius:3px;"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text-hint);margin-top:2px;">${pct}% of total spending</div>
+        </div>
+      </div>`;
+    }).join('')):'' ;
+
+  // ── 6. HIGHLIGHTS & RECORDS ───────────────────────────
+  const highlightsHTML=section('Records & Highlights',`
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${highestIncomeMonth?`<div style="background:var(--success-light);border:1px solid var(--success);border-radius:var(--radius-sm);padding:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:11px;font-weight:600;color:var(--success);">💰 Highest earning month</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${highestIncomeMonth.label}</div></div>
+        <div style="font-size:15px;font-weight:700;color:var(--success);">${fmtS(highestIncomeMonth.income)}</div>
+      </div>`:''}
+      ${biggestPurchase?`<div style="background:var(--danger-light);border:1px solid var(--danger);border-radius:var(--radius-sm);padding:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:11px;font-weight:600;color:var(--danger);">🛒 Biggest single purchase</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">"${biggestPurchase.name}" — ${SHORT[biggestPurchase.month]||biggestPurchase.month}</div></div>
+        <div style="font-size:15px;font-weight:700;color:var(--danger);">${fmtS(biggestPurchase.amount)}</div>
+      </div>`:''}
+      ${worstMonth?`<div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.3);border-radius:var(--radius-sm);padding:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:11px;font-weight:600;color:var(--purple);">⚠ Highest debt spending month</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${worstMonth.label} — ${fmtS(worstMonth.plSpent)} on PayLater</div></div>
+        <div style="font-size:15px;font-weight:700;color:var(--purple);">${fmtS(worstMonth.plSpent+worstMonth.wantSpent)}</div>
+      </div>`:''}
+      <div style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border-radius:var(--radius-sm);padding:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:11px;font-weight:600;color:#9FE1CB;">🛡 Emergency fund built</div><div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px;">From Rp 0 to this</div></div>
+        <div style="font-size:15px;font-weight:700;color:#9FE1CB;">${fmtS(totalEmg)}</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1a4a7a,#0d2d4f);border-radius:var(--radius-sm);padding:10px;display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:11px;font-weight:600;color:#FAC775;">🎂 Saved for Shalahuddin</div><div style="font-size:12px;color:rgba(255,255,255,.4);margin-top:2px;">Birthday fund total</div></div>
+        <div style="font-size:15px;font-weight:700;color:#FAC775;">${fmtS(totalBday)}</div>
+      </div>
+    </div>`);
+
+  // ── 7. BAD HABITS & MISSED OPPORTUNITIES ─────────────
+  const habits=[];
+  if(plPct>30) habits.push({ico:'🔄',col:'r',title:'PayLater dependency',body:`${plPct}% of your total spending in 2026 was on PayLater. That's ${fmtS(totalPL)} you spent before you had it. Every month you paid a bill and sometimes added new debt on top. That cycle is exactly what made debt feel endless.`});
+  if(wantPct>55) habits.push({ico:'🛍',col:'r',title:'Wants-driven spending',body:`${wantPct}% of logged purchases were wants — not needs. That's ${fmtS(totalWant)} spent on desire. There's nothing wrong with spending on yourself, but not when you're simultaneously carrying ${fmtS(shopeeTotal)} in PayLater.`});
+  if(totalExtra>2000000&&totalEmg<totalExtra*0.15) habits.push({ico:'✈',col:'a',title:'Underutilised windfall income',body:`You earned ${fmtS(totalExtra)} in business trip income on top of your salary. Less than 15% of that became savings. Business trips are unpredictable — your boss assigns them, you don't control them. Treating that income as regular salary is a missed opportunity every single time.`});
+  if(totalTopup>5000000) habits.push({ico:'🛵',col:'a',title:'High food & transport spend',body:`${fmtS(totalTopup)} in GoPay/OVO top-ups across the year. With catering covering most weekday lunches, this is almost entirely weekend food, delivery, and Grab rides. Small amounts that add up quietly.`});
+
+  const improvs=[];
+  if(debtPct>50) improvs.push({ico:'📉',col:'g',title:`${debtPct}% PayLater cleared`,body:`You started 2026 with ${fmtS(shopeeTotal)} in Shopee PayLater and cleared ${debtPct}% of it. That took discipline — every bill paid on time, no new PayLater added after the commitment.`});
+  if(totalEmg>0) improvs.push({ico:'🛡',col:'g',title:'Emergency fund started',body:`You built ${fmtS(totalEmg)} in emergency savings from scratch. Six months ago that number was zero. It's not the target yet, but starting is the hardest part.`});
+  if(ccInstPaidAmt>0) improvs.push({ico:'💳',col:'g',title:'CC installments on track',body:`${fmtS(ccInstPaidAmt)} in CC installments paid on time. Not one missed payment. Your credit history thanks you.`});
+  if(activeMonths.length>=6) improvs.push({ico:'📊',col:'g',title:'6+ months of consistent tracking',body:`Most people start a finance tracker and abandon it within a month. You're still here, still logging, still honest with yourself. That habit alone is worth more than any single financial decision.`});
+
+  const habitsHTML=habits.length>0?section('Bad Habits — Things to Acknowledge',
+    habits.map(h=>`<div style="display:flex;gap:10px;padding:10px;background:var(--danger-light);border:1px solid #F5C1C1;border-radius:var(--radius-sm);margin-bottom:8px;">
+      <div style="font-size:18px;flex-shrink:0;">${h.ico}</div>
+      <div><div style="font-size:12px;font-weight:600;color:var(--danger);margin-bottom:3px;">${h.title}</div><div style="font-size:12px;color:var(--text-muted);line-height:1.6;">${h.body}</div></div>
+    </div>`).join('')):'';
+
+  const improvsHTML=improvs.length>0?section('Improvements — Things to Be Proud Of',
+    improvs.map(h=>`<div style="display:flex;gap:10px;padding:10px;background:var(--success-light);border:1px solid var(--success);border-radius:var(--radius-sm);margin-bottom:8px;">
+      <div style="font-size:18px;flex-shrink:0;">${h.ico}</div>
+      <div><div style="font-size:12px;font-weight:600;color:var(--success);margin-bottom:3px;">${h.title}</div><div style="font-size:12px;color:var(--text-muted);line-height:1.6;">${h.body}</div></div>
+    </div>`).join('')):'';
+
+  // ── 8. SAVINGS PROGRESS ───────────────────────────────
+  const emgTarget=12000000;
+  const emgPct2=Math.min(Math.round((totalEmg/emgTarget)*100),100);
+  const savingsHTML=section('Savings Progress',`
+    <div style="background:linear-gradient(135deg,#1a3a2a,#0d2a1a);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;">Emergency Fund — BRI</div>
+        <div style="font-size:22px;font-weight:700;color:#9FE1CB;">${fmtS(totalEmg)}</div></div>
+        <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">Goal</div><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.6);">Rp 10–12M</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border-radius:4px;height:8px;overflow:hidden;margin-bottom:8px;">
+        <div style="height:100%;background:#9FE1CB;border-radius:4px;width:${emgPct2}%;transition:width .5s;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;">
+        ${['july','august','september','october','november','december'].map(m=>{
+          const saved=(D.savings&&D.savings.emg&&D.savings.emg[m])?D.savings.emg[m].total:0;
+          const targets2={july:500000,august:300000,september:1500000,october:2000000,november:2000000,december:2500000};
+          const tgt=targets2[m]||0;const done=saved>=tgt&&tgt>0;
+          return`<div style="text-align:center;padding:4px;background:rgba(255,255,255,${done?'.12':'.04'});border-radius:4px;">
+            <div style="font-size:9px;color:rgba(255,255,255,${done?'.7':'.3'});">${SHORT[m]}</div>
+            <div style="font-size:10px;color:${done?'#9FE1CB':'rgba(255,255,255,.3)'};font-weight:${done?700:400};">${saved>0?fmtS(saved):'—'}</div>
+            ${done?'<div style="font-size:9px;color:#9FE1CB;">✓</div>':''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#1a4a7a,#0d2d4f);border-radius:var(--radius-sm);padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;">🎂 Birthday Fund for Shalahuddin</div>
+        <div style="font-size:22px;font-weight:700;color:#FAC775;">${fmtS(totalBday)}</div></div>
+        <div style="text-align:right;"><div style="font-size:10px;color:rgba(255,255,255,.4);">Target</div><div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.6);">Rp 3M</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);border-radius:4px;height:6px;overflow:hidden;margin-top:8px;">
+        <div style="height:100%;background:#FAC775;border-radius:4px;width:${Math.min(Math.round((totalBday/3000000)*100),100)}%;transition:width .5s;"></div>
+      </div>
+    </div>`);
+
+  // ── 9. ANNUAL HONEST VERDICT ──────────────────────────
+  let verdict='';
+  if(activeMonths.length<3){
+    verdict='Keep logging — the full picture needs more months to form. Come back to this page as the year progresses.';
+  } else if(debtPct>=100&&totalEmg>=5000000){
+    verdict=`PayLater: gone. Emergency fund: building. You came into 2026 carrying debt and ended it with a financial foundation. That's not a small thing — most people with your income pattern stay stuck in the same cycle for years. You didn't. You built a system, you tracked everything, and you faced the numbers honestly. That's the version of you that actually gets ahead.`;
+  } else if(debtPct>=70){
+    verdict=`${debtPct}% of PayLater cleared in 2026. That's real progress on debt that felt overwhelming at the start of the year. You also built ${fmtS(totalEmg)} in emergency savings — which means next time something unexpected happens, you won't have to reach for Shopee. The habit of reaching for PayLater when cash runs short? You're actively replacing it with something better. That's the actual win of 2026.`;
+  } else if(wantPct>65&&plPct>35){
+    verdict=`${wantPct}% of your spending was on wants, ${plPct}% on PayLater. That's the combination that defines how this year felt — always moving, never quite getting ahead. But you tracked all of it. You know exactly where the money went, which most people don't. The system is built. The data is honest. 2027 can be different because you now know precisely what "different" needs to look like.`;
+  } else if(totalEmg>3000000&&debtPct>40){
+    verdict=`Debt coming down, emergency fund going up. That's the right direction, and both things happening at the same time is genuinely hard to pull off. You didn't have a perfect year — the PayLater usage, the wants spending, the windfall income that didn't fully get saved. But you made measurable, real progress on the things that matter most. That counts.`;
+  } else {
+    verdict=`${activeMonths.length} months of honest tracking in 2026. ${fmtS(totalIncome)} earned, ${fmtS(totalSpent)} spent beyond bills, ${fmtS(totalEmg)} saved. The numbers tell a story — not always flattering, but yours. The fact that you're looking at this page means you care enough to know the truth. That's rarer than it sounds.`;
+  }
+
+  el.innerHTML=glanceHTML+barsHTML+debtTimelineHTML+spendBreakHTML+catHTML2+highlightsHTML+habitsHTML+improvsHTML+savingsHTML+`
+    <div style="background:var(--text);border-radius:var(--radius);padding:20px;color:white;margin-top:4px;">
+      <div style="font-family:'DM Serif Display',serif;font-size:19px;margin-bottom:4px;">2026 — The honest verdict</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em;">Your year, honestly assessed</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:2.0;">${verdict}</div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.35);text-align:center;">bellafinancetracker.netlify.app · Built with intention, tracked with honesty.</div>
+    </div>`;
+}
+function renderAllMonthSummaries(){
+  ['january','february','march','april','may','june','july','august','september','october','november','december'].forEach(m=>renderMonthSummary(m));
+}
+
+function addSavings(type,month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const inp=document.getElementById(p+'-'+type+'-inp');
+  const val=parseFloat(inp.value);if(!val||val<=0)return;
+  if(!D.savings)D.savings={};
+  if(!D.savings[type])D.savings[type]={};
+  if(!D.savings[type][month])D.savings[type][month]={total:0,log:[]};
+  D.savings[type][month].total+=val;
+  D.savings[type][month].log.push(val);
+  save();inp.value='';updSavings(type,month);
+}
+function undoSavings(type,month){
+  if(!D.savings||!D.savings[type]||!D.savings[type][month])return;
+  const log=D.savings[type][month].log;
+  if(!log||log.length===0)return;
+  const last=log.pop();
+  D.savings[type][month].total=Math.max(0,D.savings[type][month].total-last);
+  save();updSavings(type,month);
+}
+function updSavings(type,month){
+  const p=month==='january'?'jan':month==='february'?'feb':month==='march'?'mar':month==='april'?'apr':month==='may'?'may':month==='june'?'jun':month==='july'?'jul':month==='august'?'aug':month==='september'?'sep':month==='october'?'oct':month==='november'?'nov':'dec';
+  const total=(D.savings&&D.savings[type]&&D.savings[type][month])?D.savings[type][month].total:0;
+  const targets={bday:{july:3000000,august:3000000},emg:{july:500000,august:300000,september:1500000,october:2000000,november:2000000,december:2500000}};
+  const target=(targets[type]&&targets[type][month])||0;
+  const savedEl=document.getElementById(p+'-'+type+'-saved');
+  const barEl=document.getElementById(p+'-'+type+'-bar');
+  const totalEl=document.getElementById(p+'-'+type+'-total');
+  if(savedEl)savedEl.textContent=fmt(total);
+  if(barEl&&target>0)barEl.style.width=Math.min((total/target)*100,100)+'%';
+  if(totalEl)totalEl.textContent='Total saved: '+fmt(total);
+  // update august birthday total (shows combined jul+aug)
+  if(type==='bday'){
+    const julTotal=(D.savings&&D.savings.bday&&D.savings.bday.july)?D.savings.bday.july.total:0;
+    const augTotal=(D.savings&&D.savings.bday&&D.savings.bday.august)?D.savings.bday.august.total:0;
+    const combined=julTotal+augTotal;
+    const augTotEl=document.getElementById('aug-bday-total');
+    if(augTotEl)augTotEl.textContent='Total saved: '+fmt(combined)+' of Rp 3.000.000 target';
+  }
+}
+function updAllSavings(){
+  ['july','august','september','october','november','december'].forEach(m=>{
+    ['bday','emg'].forEach(t=>updSavings(t,m));
+  });
+}
+
+function showPanel(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');el.classList.add('active');
+  if(id==='debt'){renderDebt();renderCCActual();}
+  if(id==='allocate')renderAllocate();
+  if(id==='debt'){renderDebt();renderCCActual();}
+  if(id==='allocate')renderAllocate();
+  if(id==='annual')renderAnnualSummary();
+  if(['january','february','march','april','may','june','july','august','september','october','november','december'].includes(id))renderMonthSummary(id);
+}
+
+function renderAll(){
+  const b=getBills();
+  renderBills(b.january,'jan-bills','jan-bills-tot','january');
+  renderBills(b.february,'feb-bills','feb-bills-tot','february');
+  renderBills(b.march,'mar-bills','mar-bills-tot','march');
+  renderBills(b.april,'apr-bills','apr-bills-tot','april');
+  renderBills(b.may,'may-bills','may-bills-tot','may');
+  renderBills(b.june,'jun-bills','jun-bills-tot','june');
+  renderBills(b.july,'jul-bills','jul-bills-tot','july');
+  renderBills(b.august,'aug-bills','aug-bills-tot','august');
+  renderBills(b.september,'sep-bills','sep-bills-tot','september');
+  renderBills(b.october,'oct-bills','oct-bills-tot','october');
+  renderBills(b.november,'nov-bills','nov-bills-tot','november');
+  renderBills(b.december,'dec-bills','dec-bills-tot','december');
+  ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'].forEach(m=>{updateSum(m);updGrab(m);updExtra(m);});
+  updOutfit();renderDebt();renderCCActual();renderAllocate();
+  ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'].forEach(m=>renderShopInline(m));
+  renderAllMonthSummaries();updAllSavings();renderAnnualSummary();
+  document.getElementById('phuket-saved').textContent='Rp 0 saved so far';
+}
+
+init();
+</script>
+</body>
+</html>
